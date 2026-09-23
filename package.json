@@ -1,0 +1,19 @@
+{
+  "name": "orin-console",
+  "version": "1.0.0",
+  "description": "Orin Console: browser terminal into isolated Vercel Sandboxes. Real Linux, shareable sessions, 24h TTL.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "node --test --import ./test/_hooks.mjs test/*.test.mjs"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.0",
+    "@vercel/sandbox": "^3.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0"
+  }
+}

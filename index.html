@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Orin Console — Browser Terminal in Isolated Sandboxes | Orin AI</title>
+<meta name="description" content="Orin Console: a real Linux terminal in your browser. Isolated Vercel Sandbox per session, shareable live links, 24h TTL. No shell emulation — a real PTY." />
+<link rel="canonical" href="https://console.orinai.org/" />
+<meta property="og:title" content="Orin Console — real terminal, in the browser" />
+<meta property="og:description" content="Isolated sandbox per session. Share live terminal links. 24h TTL. By Orin AI." />
+<meta property="og:url" content="https://console.orinai.org/" />
+<meta property="og:type" content="website" />
+<meta name="theme-color" content="#05070d" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2305070d'/%3E%3Ctext x='8' y='23' font-family='monospace' font-size='17' fill='%235eead4'%3E%3E_%3C/text%3E%3C/svg%3E" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Orin Console","applicationCategory":"DeveloperApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0"},"provider":{"@type":"Organization","name":"Orin AI","url":"https://orinai.org"}}
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css" />
+<style>
+:root{--bg:#05070d;--panel:#0a0f1a;--line:#1b2740;--txt:#dbe7ff;--mut:#8494b3;--acc:#5eead4;--warn:#fbbf24;--bad:#f87171}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+a{color:var(--acc)}header{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--line)}
+.logo{font-family:monospace;font-weight:700;color:var(--acc)}.sp{flex:1}.mut{color:var(--mut)}
+main{max-width:1060px;margin:0 auto;padding:24px 20px 60px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin:14px 0}
+.btn{background:var(--acc);color:#04211c;border:0;border-radius:9px;padding:9px 16px;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--acc);border:1px solid var(--acc)}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+input,select{width:100%;background:#060b15;border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:9px 11px;margin:6px 0}
+label{font-size:12px;color:var(--mut)}code{font-family:monospace;background:#060b15;padding:2px 6px;border-radius:6px}
+#term{height:60vh;min-height:380px;background:#020409;border:1px solid var(--line);border-radius:12px;padding:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.hero h1{font-size:clamp(28px,5vw,52px);margin:10px 0}h2{margin:6px 0 10px}
+.sess{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0}
+.ttl{font-family:monospace;color:var(--warn)}footer{border-top:1px solid var(--line);padding:18px 20px;color:var(--mut);font-size:13px;display:flex;gap:14px;flex-wrap:wrap}
+.hidden{display:none!important}.mono{font-family:monospace;font-size:13px;word-break:break-all}
+</style>
+<script type="importmap">{"imports":{"@xterm/xterm":"https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm","@xterm/addon-fit":"https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm"}}</script>
+</head>
+<body>
+<header><span class="logo">&gt;_ orin console</span><span class="sp"></span><span class="mut" id="hdr-mode">by Orin AI</span></header>
+<main>
+<!-- LANDING -->
+<section id="view-home">
+  <div class="hero">
+    <h1>A real Linux terminal,<br />in your browser.</h1>
+    <p class="mut">Each session boots an <b>isolated Vercel Sandbox</b> with a real PTY — pipes, colors, <code>npm install</code>, dev servers with public URLs. No shell emulation. Share a live link. Sessions self-destruct in 24h; compute auto-renews.</p>
+    <div class="row"><button class="btn" id="btn-new">New session</button><a class="mut" href="https://orinai.org">orinai.org</a><a class="mut" href="https://github.com/anomalyco/orin-console">GitHub</a></div>
+  </div>
+  <div class="card"><h2>Connect</h2>
+    <p class="mut">Paste an <b>Orin session token</b> (from Orin Chat login) or an <b>Orin MCP credential</b> (<code>orin_mcp_…</code>). Stored only in this browser.</p>
+    <label>Orin token</label><input id="token" type="password" placeholder="orin session or orin_mcp_…" autocomplete="off" />
+    <div class="row"><button class="btn" id="btn-save">Save &amp; list sessions</button><button class="btn ghost" id="btn-clear">Forget</button></div>
+  </div>
+  <div class="card hidden" id="newcard"><h2>New session</h2>
+    <div class="grid">
+      <div><label>Columns</label><input id="n-cols" type="number" value="100" min="40" max="250" /></div>
+      <div><label>Rows</label><input id="n-rows" type="number" value="30" min="10" max="80" /></div>
+      <div><label>Expose ports (comma separated, optional)</label><input id="n-ports" placeholder="3000, 5173" /></div>
+    </div>
+    <label>Env vars (NAME=value per line — injected by the platform, never echoed)</label><input id="n-env" placeholder="API_KEY=sk-…&#10;NODE_ENV=production" />
+    <div class="row"><button class="btn" id="btn-create">Boot sandbox</button><span class="mut" id="create-msg"></span></div>
+  </div>
+  <div class="card hidden" id="listcard"><h2>Your sessions</h2><div id="sessions"></div></div>
+  <div class="grid">
+    <div class="card"><h2>Isolated</h2><p class="mut">One sandbox per session. Your keystrokes go to a real tmux PTY — the frontend never parses or emulates a shell.</p></div>
+    <div class="card"><h2>Shareable</h2><p class="mut">Read-only for demos, live-terminal for pairing. Tokens are random, hashed server-side, revocable.</p></div>
+    <div class="card"><h2>Ephemeral</h2><p class="mut">24h TTL on sessions, history and links — enforced on every request. Sandboxes auto-renew behind the scenes.</p></div>
+  </div>
+</section>
+<!-- TERMINAL -->
+<section id="view-term" class="hidden">
+  <div class="row"><button class="btn ghost" id="btn-back">← sessions</button><span class="mono mut" id="t-meta"></span><span class="sp"></span><span class="ttl" id="t-ttl"></span><button class="btn danger" id="btn-destroy">Destroy</button></div>
+  <div id="term"></div>
+  <div class="card"><h2>Share this session</h2>
+    <div class="row"><button class="btn ghost" id="btn-share-read">Copy read link</button><button class="btn ghost" id="btn-share-term">Copy live-terminal link</button></div>
+    <div id="shares" class="mono mut"></div>
+  </div>
+</section>
+<!-- GUEST -->
+<section id="view-guest" class="hidden">
+  <div class="row"><span class="mono mut" id="g-meta"></span><span class="sp"></span><span class="ttl" id="g-ttl"></span></div>
+  <div id="term-g"></div>
+  <p class="mut" id="g-note"></p>
+</section>
+</main>
+<footer><span>© 2026 Orin AI · Januth Nimnal</span><span>·</span><a href="https://orinai.org">orinai.org</a><a href="https://chat.orinai.org">Chat</a><a href="https://tools.orinai.org">Tools</a><a href="https://mcp.orinai.org">MCP</a></footer>
+<script type="module">
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+const $ = (id) => document.getElementById(id);
+const api = async (path, opts = {}) => {
+  const t = localStorage.getItem('orin_token') || '';
+  const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t, ...(opts.headers || {}) } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || 'request failed');
+  return j;
+};
+const show = (id) => { for (const v of ['view-home','view-term','view-guest']) $(v).classList.add('hidden'); $(id).classList.remove('hidden'); };
+// ---------- owner home ----------
+$('btn-save').onclick = () => { localStorage.setItem('orin_token', $('token').value.trim()); refresh(); };
+$('btn-clear').onclick = () => { localStorage.removeItem('orin_token'); $('token').value=''; $('listcard').classList.add('hidden'); };
+$('btn-new').onclick = () => $('newcard').classList.toggle('hidden');
+$('btn-create').onclick = async () => {
+  try {
+    $('create-msg').textContent = 'booting…';
+    const env = {};
+    for (const line of $('n-env').value.split('\n')) { const i = line.indexOf('='); if (i > 0) env[line.slice(0,i).trim()] = line.slice(i+1); }
+    const ports = $('n-ports').value.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>Number.isInteger(n));
+    const { session } = await api('/api/sessions', { method:'POST', body: JSON.stringify({ cols:+$('n-cols').value||100, rows:+$('n-rows').value||30, env, ports }) });
+    location.hash = '#/t/' + session.id; route();
+  } catch(e){ $('create-msg').textContent = e.message; }
+};
+async function refresh(){
+  if (!localStorage.getItem('orin_token')) return;
+  try {
+    const { sessions } = await api('/api/sessions');
+    $('listcard').classList.remove('hidden');
+    $('sessions').innerHTML = sessions.length ? '' : '<p class="mut">No live sessions.</p>';
+    for (const s of sessions) {
+      const d = document.createElement('div'); d.className='sess';
+      d.innerHTML = `<span class="mono">${s.id} · ${s.cols}×${s.rows}</span><span class="ttl" data-exp="${s.expiresAt}"></span>`;
+      const b = document.createElement('button'); b.className='btn ghost'; b.textContent='Open'; b.onclick=()=>{ location.hash='#/t/'+s.id; route(); };
+      d.appendChild(b); $('sessions').appendChild(d);
+    }
+    tickTtls();
+  } catch(e){ $('sessions').innerHTML = `<p class="mut">${e.message}</p>`; $('listcard').classList.remove('hidden'); }
+}
+function tickTtls(){
+  document.querySelectorAll('[data-exp]').forEach(el=>{
+    const ms = new Date(el.dataset.exp).getTime() - Date.now();
+    el.textContent = ms<=0 ? 'expired' : `⏳ ${Math.floor(ms/3600000)}h ${Math.floor(ms%3600000/60000)}m left`;
+  });
+}
+setInterval(tickTtls, 30000);
+// ---------- terminal core ----------
+function makeTerm(el){
+  const t = new Terminal({ cursorBlink:true, fontFamily:'monospace', fontSize:14, theme:{background:'#020409'} });
+  const fit = new FitAddon(); t.loadAddon(fit);
+  return { t, fit };
+}
+async function streamLoop({ inputUrl, streamUrl, termApi, onMeta }) {
+  const { t, fit } = termApi;
+  let lastScreen = '', since = 0, alive = true;
+  const post = (body) => fetch(inputUrl, { method:'POST', headers:{'Content-Type':'application/json', ...(localStorage.getItem('orin_token')?{Authorization:'Bearer '+localStorage.getItem('orin_token')}:{})}, body: JSON.stringify(body) });
+  t.onData((d) => {
+    if (!alive) return;
+    if (d === '\r') post({ key:'Enter' });
+    else if (d === '\x03') post({ key:'C-c' });
+    else if (d === '\x04') post({ key:'C-d' });
+    else if (d === '\x7f') post({ key:'BSpace' });
+    else if (d === '\x1b') post({ key:'Escape' });
+    else if (d === '\t') post({ key:'Tab' });
+    else if (d === '\x1b[A') post({ key:'Up' });
+    else if (d === '\x1b[B') post({ key:'Down' });
+    else if (d === '\x1b[C') post({ key:'Right' });
+    else if (d === '\x1b[D') post({ key:'Left' });
+    else if (d >= ' ' || d === '\n') post({ text: d });
+  });
+  t.onResize(({cols,rows}) => post({ cols, rows }).catch(()=>{}));
+  new ResizeObserver(()=>{ try{fit.fit();}catch{} }).observe(t.element);
+  (async () => {
+    while (alive) {
+      try {
+        const r = await fetch(streamUrl, { method:'POST', headers:{'Content-Type':'application/json', ...(localStorage.getItem('orin_token')?{Authorization:'Bearer '+localStorage.getItem('orin_token')}:{})}, body: JSON.stringify({ lastScreen, since }) });
+        if (!r.ok || !r.body) { t.writeln('\r\n[session ended]'); alive=false; break; }
+        const reader = r.body.getReader(); const dec = new TextDecoder(); let buf='';
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream:true });
+          let idx;
+          while ((idx = buf.indexOf('\n\n')) >= 0) {
+            const chunk = buf.slice(0, idx); buf = buf.slice(idx+2);
+            for (const line of chunk.split('\n')) {
+              if (!line.startsWith('data: ')) continue;
+              const msg = JSON.parse(line.slice(6));
+              if (msg.dead) { t.writeln('\r\n[session destroyed]'); alive=false; break; }
+              if (msg.screen !== undefined) { lastScreen = msg.screen; t.reset(); t.write(msg.screen.replace(/\n/g,'\r\n')); }
+              if (msg.cwd) onMeta(msg.cwd);
+              if (msg.since) since = msg.since;
+              if (msg.reconnect) break;
+            }
+            if (!alive) break;
+          }
+          if (!alive) break;
+        }
+      } catch { await new Promise(r=>setTimeout(r,2000)); }
+    }
+  })();
+  return () => { alive = false; };
+}
+// ---------- owner terminal ----------
+let stopTerm = null;
+async function openSession(id){
+  show('view-term'); $('t-meta').textContent = id;
+  if (stopTerm) stopTerm();
+  const termApi = makeTerm($('term')); $('term').innerHTML=''; termApi.t.open($('term')); termApi.fit.fit();
+  try {
+    const { session } = await api('/api/sessions/' + id);
+    const exp = new Date(session.expiresAt).getTime();
+    const tick = () => { const ms = exp - Date.now(); $('t-ttl').textContent = ms<=0?'expired':`⏳ ${Math.floor(ms/3600000)}h ${Math.floor(ms%3600000/60000)}m left`; };
+    tick(); const iv = setInterval(tick, 30000);
+    stopTerm = await streamLoop({ inputUrl:`/api/sessions/${id}/input`, streamUrl:`/api/sessions/${id}/stream`, termApi, onMeta:(cwd)=>{ $('t-meta').textContent = `${id} · ${cwd}`; } });
+    const origStop = stopTerm; stopTerm = () => { clearInterval(iv); origStop(); };
+  } catch(e){ termApi.t.writeln(e.message); }
+  $('btn-destroy').onclick = async () => { if(!confirm('Destroy this session and its sandbox?'))return; await api('/api/sessions/'+id,{method:'DELETE'}); location.hash='#/'; route(); };
+  $('btn-back').onclick = () => { if(stopTerm)stopTerm(); location.hash='#/'; route(); };
+  $('btn-share-read').onclick = () => shareLink(id, 'read');
+  $('btn-share-term').onclick = () => shareLink(id, 'terminal');
+  loadShares(id);
+}
+async function shareLink(id, mode){
+  const { token } = await api(`/api/sessions/${id}/share`, { method:'POST', body: JSON.stringify({ mode }) });
+  const url = location.origin + '#/s/' + token;
+  await navigator.clipboard.writeText(url).catch(()=>{});
+  alert(`${mode} link copied (token shown once):\n${url}`);
+  loadShares(id);
+}
+async function loadShares(id){
+  try {
+    const { shares } = await api(`/api/sessions/${id}/share`);
+    $('shares').textContent = shares.length ? shares.map(s=>`${s.mode} · ${s.createdAt}`).join('\n') : 'no active links';
+  } catch { $('shares').textContent = ''; }
+}
+// ---------- guest ----------
+async function openGuest(token){
+  show('view-guest');
+  const r = await fetch('/api/s/' + token); const j = await r.json();
+  if (!r.ok) { $('g-meta').textContent = j.error || 'expired'; return; }
+  $('g-meta').textContent = `shared session · ${j.mode}`;
+  $('g-note').textContent = j.mode === 'read' ? 'Read-only view.' : 'Live terminal — your keystrokes run in the shared sandbox.';
+  const exp = new Date(j.expiresAt).getTime();
+  setInterval(()=>{ const ms=exp-Date.now(); $('g-ttl').textContent = ms<=0?'expired':`⏳ ${Math.floor(ms/3600000)}h ${Math.floor(ms%3600000/60000)}m left`; }, 30000);
+  const termApi = makeTerm($('term-g')); $('term-g').innerHTML=''; termApi.t.open($('term-g')); termApi.fit.fit();
+  for (const e of (j.history||[])) {
+    if (e.type==='command') termApi.t.writeln('$ ' + (e.data.text||''));
+    else if (e.type==='stdout') termApi.t.write(String(e.data.text||'').replace(/\n/g,'\r\n'));
+    else if (e.type==='exit') termApi.t.writeln(`[exit ${e.data.code}]`);
+  }
+  await streamLoop({ inputUrl:`/api/s/${token}/input`, streamUrl:`/api/s/${token}/stream`, termApi, onMeta:()=>{} });
+}
+// ---------- router ----------
+function route(){
+  const h = location.hash;
+  if (h.startsWith('#/t/')) openSession(h.slice(4));
+  else if (h.startsWith('#/s/')) openGuest(h.slice(4));
+  else { show('view-home'); if(localStorage.getItem('orin_token')){ $('token').value='•••saved•••'; refresh(); } }
+}
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
