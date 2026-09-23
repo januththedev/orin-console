@@ -24,6 +24,14 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Orin Console","applicationCategory":"DeveloperApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0"},"provider":{"@type":"Organization","name":"Orin AI","url":"https://orinai.org"}}
 </script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"What is Orin Console?","acceptedAnswer":{"@type":"Answer","text":"Orin Console is a real Linux terminal in your browser. Each session boots an isolated cloud sandbox with a genuine shell — pipes, colors, package installs and dev servers with public URLs."}},
+{"@type":"Question","name":"Is Orin Console a real Linux environment or an emulation?","acceptedAnswer":{"@type":"Answer","text":"Real. Your keystrokes go to a genuine PTY driven through tmux in an isolated sandbox. The browser never parses or emulates a shell."}},
+{"@type":"Question","name":"How long do Orin Console sessions last?","acceptedAnswer":{"@type":"Answer","text":"Sessions expire 24 hours after creation, with history and share links deleted on expiry. Compute renews transparently behind the scenes while the session is alive."}},
+{"@type":"Question","name":"Can I share an Orin Console session?","acceptedAnswer":{"@type":"Answer","text":"Yes. Create a read-only link for demos or a live-terminal link for pairing. Links use random tokens, are revocable, die with the session, and never expose env vars."}}
+]}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
