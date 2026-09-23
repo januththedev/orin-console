@@ -3,281 +3,233 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Orin Console — Browser Terminal in Isolated Sandboxes | Orin AI</title>
-<meta name="description" content="Orin Console: a real Linux terminal in your browser. Isolated Vercel Sandbox per session, shareable live links, 24h TTL. No shell emulation — a real PTY." />
+<title>Orin Console — Linux Terminal in Your Browser | Orin AI</title>
+<meta name="description" content="Orin Console is a real Linux terminal in your browser. Isolated sandbox per session, shareable live links, 24-hour lifecycle. No shell emulation." />
 <link rel="canonical" href="https://console.orinai.org/" />
-<meta property="og:title" content="Orin Console — real terminal, in the browser" />
-<meta property="og:description" content="Isolated sandbox per session. Share live terminal links. 24h TTL. By Orin AI." />
+<meta property="og:title" content="Orin Console — a real Linux environment, anywhere" />
+<meta property="og:description" content="Launch an isolated Linux workspace from your browser. Real PTY, shareable links, 24h lifecycle." />
 <meta property="og:url" content="https://console.orinai.org/" />
 <meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Orin Console — a real Linux environment, anywhere" />
+<meta name="twitter:description" content="Real Linux terminal in your browser. Isolated sandboxes, live share links." />
 <meta name="theme-color" content="#04060c" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2305070d'/%3E%3Ctext x='8' y='23' font-family='monospace' font-size='17' fill='%235eead4'%3E%3E_%3C/text%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2304060c'/%3E%3Ctext x='8' y='23' font-family='monospace' font-size='17' fill='%235eead4'%3E%3E_%3C/text%3E%3C/svg%3E" />
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Orin Console","applicationCategory":"DeveloperApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0"},"provider":{"@type":"Organization","name":"Orin AI","url":"https://orinai.org"}}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/ui/tokens.css" />
+<link rel="stylesheet" href="/ui/components.css" />
+<link rel="stylesheet" href="/ui/console.css" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.css" />
-<style>
-:root{
-  --bg0:#04060c; --bg1:#080d18;
-  --panel:rgba(148,184,255,.045); --panel2:rgba(148,184,255,.08);
-  --line:rgba(148,184,255,.14); --line2:rgba(148,184,255,.22);
-  --txt:#e9f1ff; --mut:#8f9cbd; --dim:#5c6884;
-  --acc:#5eead4; --acc-d:#04211c; --vio:#8b93ff;
-  --warn:#fbbf24; --bad:#f87171; --ok:#34d399;
-  --r:16px; --r-s:10px;
-  --font:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
-}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg0);color:var(--txt);font-family:var(--font);-webkit-font-smoothing:antialiased}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(720px 380px at 12% -4%,rgba(94,234,212,.10),transparent 60%),
-             radial-gradient(820px 420px at 88% 6%,rgba(139,147,255,.12),transparent 60%),
-             radial-gradient(600px 500px at 50% 110%,rgba(94,234,212,.05),transparent 60%)}
-main,header,footer{position:relative;z-index:1}
-a{color:var(--acc);text-decoration:none}
-/* ---------- nav ---------- */
-.nav{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:13px 22px;
-  background:rgba(4,6,12,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:700;color:var(--acc);font-size:15px}
-.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--acc);box-shadow:0 0 12px var(--acc);animation:pulse 2.4s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
-.nav .sp{flex:1}
-.nav-links{display:flex;gap:4px;align-items:center}
-.nav-links a{color:var(--mut);font-size:13.5px;font-weight:500;padding:7px 12px;border-radius:8px}
-.nav-links a:hover{color:var(--txt);background:var(--panel2)}
-.userchip{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);border:1px solid var(--line);border-radius:99px;padding:6px 13px;background:var(--panel)}
-.userchip b{color:var(--txt);font-weight:600}
-/* ---------- layout ---------- */
-main{max-width:1120px;margin:0 auto;padding:0 22px 70px}
-section{padding:8px 0}
-/* ---------- hero ---------- */
-.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;padding:64px 0 30px}
-@media(max-width:900px){.hero{grid-template-columns:1fr;padding-top:44px}}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);
-  border:1px solid rgba(94,234,212,.3);background:rgba(94,234,212,.07);padding:6px 13px;border-radius:99px}
-.hero h1{font-size:clamp(34px,5.4vw,60px);line-height:1.04;margin:18px 0 16px;font-weight:800;letter-spacing:-.02em}
-.hero h1 .grad{background:linear-gradient(92deg,var(--acc),var(--vio));-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero p.sub{color:var(--mut);font-size:16.5px;line-height:1.65;margin:0 0 26px;max-width:52ch}
-.hero p.sub b{color:var(--txt);font-weight:600}
-.hero p.sub code{font-family:var(--mono);font-size:.86em;background:var(--panel2);border:1px solid var(--line);padding:2px 7px;border-radius:7px;color:var(--acc)}
-.cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-.hero-meta{display:flex;gap:18px;margin-top:26px;flex-wrap:wrap}
-.hero-meta div{font-size:13px;color:var(--dim)}
-.hero-meta b{display:block;font-size:19px;color:var(--txt);font-weight:700}
-/* fake terminal window */
-.win{background:#070b14;border:1px solid var(--line2);border-radius:14px;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.7),0 0 0 1px rgba(0,0,0,.4),0 0 60px -30px rgba(94,234,212,.25)}
-.win-bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);background:rgba(148,184,255,.04)}
-.win-bar i{width:11px;height:11px;border-radius:50%}
-.win-bar i:nth-child(1){background:#f87171}.win-bar i:nth-child(2){background:#fbbf24}.win-bar i:nth-child(3){background:#34d399}
-.win-bar span{margin-left:8px;font-family:var(--mono);font-size:12px;color:var(--dim)}
-.win-body{padding:16px 18px 20px;font-family:var(--mono);font-size:13.5px;line-height:1.75;min-height:250px}
-.win-body .p{color:var(--acc)} .win-body .d{color:var(--vio)} .win-body .c{color:var(--dim)}
-.win-body .caret{display:inline-block;width:8px;height:16px;background:var(--acc);vertical-align:-3px;animation:blink 1.1s steps(1) infinite}
-@keyframes blink{50%{opacity:0}}
-/* ---------- cards / forms ---------- */
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:24px;margin:18px 0;backdrop-filter:blur(6px)}
-.card h2{margin:0 0 6px;font-size:19px;font-weight:700;letter-spacing:-.01em}
-.card h2 .sub{font-weight:400;font-size:13px;color:var(--mut)}
-.card p.desc{color:var(--mut);font-size:14px;line-height:1.6;margin:0 0 14px}
-label{display:block;font-size:12.5px;font-weight:600;color:var(--mut);margin:12px 0 5px;letter-spacing:.02em}
-input,select,textarea{width:100%;background:rgba(2,5,11,.7);border:1px solid var(--line);color:var(--txt);border-radius:var(--r-s);
-  padding:11px 13px;margin:0;font-size:14px;font-family:var(--font);transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(94,234,212,.14)}
-input::placeholder,textarea::placeholder{color:var(--dim)}
-textarea{font-family:var(--mono);font-size:13px;resize:vertical;min-height:74px}
-code{font-family:var(--mono);font-size:.86em;background:var(--panel2);border:1px solid var(--line);padding:2px 7px;border-radius:7px;color:var(--acc)}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
-.sp{flex:1}.mut{color:var(--mut)}
-.mono{font-family:var(--mono);font-size:13px;word-break:break-all}
-.hidden{display:none!important}
-/* buttons */
-.btn{background:linear-gradient(180deg,#6ff5e0,#4ed9c3);color:var(--acc-d);border:0;border-radius:11px;padding:11px 20px;font-weight:700;font-size:14px;cursor:pointer;
-  font-family:var(--font);transition:transform .12s,box-shadow .12s,filter .12s;box-shadow:0 8px 24px -8px rgba(94,234,212,.45)}
-.btn:hover{filter:brightness(1.06);transform:translateY(-1px)}
-.btn:active{transform:translateY(0)}
-.btn.ghost{background:transparent;color:var(--acc);border:1px solid rgba(94,234,212,.4);box-shadow:none}
-.btn.ghost:hover{background:rgba(94,234,212,.08)}
-.btn.danger{background:transparent;color:var(--bad);border:1px solid rgba(248,113,113,.4);box-shadow:none}
-.btn.danger:hover{background:rgba(248,113,113,.08)}
-.btn.small{padding:7px 13px;font-size:13px;border-radius:9px}
-.btn[disabled]{opacity:.55;cursor:wait;transform:none}
-/* tabs */
-.tabs{display:inline-flex;background:rgba(2,5,11,.7);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
-.tabs button{border:0;background:transparent;color:var(--mut);font-family:var(--font);font-weight:600;font-size:13.5px;padding:8px 18px;border-radius:9px;cursor:pointer}
-.tabs button.on{background:var(--panel2);color:var(--txt);box-shadow:inset 0 0 0 1px var(--line2)}
-/* session rows */
-.sess{display:flex;gap:14px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin:10px 0;background:rgba(2,5,11,.45);transition:border-color .15s}
-.sess:hover{border-color:var(--line2)}
-.sess .sdot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok);flex:none}
-.sess .sid{font-family:var(--mono);font-size:13px}
-.sess .smeta{font-size:12.5px;color:var(--dim)}
-.ttl{font-family:var(--mono);font-size:12.5px;color:var(--warn);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);padding:4px 11px;border-radius:99px;white-space:nowrap}
-/* feature cards */
-.feat{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;transition:transform .15s,border-color .15s}
-.feat:hover{transform:translateY(-3px);border-color:var(--line2)}
-.feat .ico{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:12px;
-  background:rgba(94,234,212,.09);border:1px solid rgba(94,234,212,.25)}
-.feat h3{margin:0 0 8px;font-size:15.5px}
-.feat p{margin:0;color:var(--mut);font-size:13.5px;line-height:1.6}
-/* terminal view */
-.termbar{display:flex;gap:10px;align-items:center;padding:14px 0;flex-wrap:wrap}
-.termwrap{background:#04070d;border:1px solid var(--line2);border-radius:14px;overflow:hidden;box-shadow:0 24px 70px -24px rgba(0,0,0,.8)}
-.termwrap .win-bar{background:rgba(148,184,255,.05)}
-#term,#term-g{height:62vh;min-height:400px;padding:10px}
-#term-g{height:56vh}
-.pill{font-family:var(--mono);font-size:12px;color:var(--mut);border:1px solid var(--line);padding:5px 12px;border-radius:99px;background:rgba(2,5,11,.6);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sharelink{display:flex;gap:10px;align-items:center;border:1px solid rgba(94,234,212,.3);background:rgba(94,234,212,.05);border-radius:11px;padding:10px 13px;margin:9px 0;font-family:var(--mono);font-size:12.5px}
-.sharelink .url{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--acc)}
-/* footer */
-footer{border-top:1px solid var(--line);padding:22px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:center;color:var(--dim);font-size:13px}
-/* toast */
-#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#0b1220;border:1px solid var(--line2);
-  color:var(--txt);font-size:13.5px;font-weight:500;padding:11px 20px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:99;
-  box-shadow:0 16px 40px -10px rgba(0,0,0,.7);max-width:min(92vw,560px);font-family:var(--mono);font-size:12.5px}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-details{margin-top:12px}summary{cursor:pointer;font-size:13px}
-.empty{border:1px dashed var(--line2);border-radius:12px;padding:26px;text-align:center;color:var(--dim);font-size:14px}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(4,33,28,.3);border-top-color:var(--acc-d);border-radius:50%;animation:rot .7s linear infinite;vertical-align:-2px}
-@keyframes rot{to{transform:rotate(360deg)}}
-</style>
+<script src="/ui/orin.js" defer></script>
 <script type="importmap">{"imports":{"@xterm/xterm":"https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm","@xterm/addon-fit":"https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm"}}</script>
 </head>
 <body>
-<header class="nav">
-  <span class="brand"><span class="dot"></span>&gt;_ orin console</span>
-  <span class="sp"></span>
-  <nav class="nav-links"><a href="https://orinai.org">Orin AI</a><a href="https://chat.orinai.org">Chat</a><a href="https://router.orinai.org">Router</a><a href="https://github.com/januththedev/orin-console">GitHub</a></nav>
-  <span class="userchip hidden" id="nav-user">👤 <b id="nav-who"></b></span>
+<a class="o-sr" href="#main">Skip to content</a>
+<header class="o-topbar">
+  <span class="o-brand"><span class="o-dot o-pulse"></span>ORIN&nbsp;CONSOLE</span>
+  <span class="o-sp"></span>
+  <nav class="o-navlinks" aria-label="Ecosystem"><a href="https://orinai.org">Orin AI</a><a href="https://chat.orinai.org">Chat</a><a href="https://router.orinai.org">Router</a><a href="https://tools.orinai.org">Tools</a></nav>
+  <span class="o-userchip o-hidden" id="nav-user">👤&nbsp;<b id="nav-who"></b></span>
 </header>
-<main>
-<!-- LANDING -->
-<section id="view-home">
+
+<main id="main">
+<!-- ================= LANDING ================= -->
+<section id="view-home" aria-label="Orin Console overview">
   <div class="hero">
-    <div>
-      <span class="eyebrow">● live · isolated sandboxes</span>
-      <h1>A real Linux terminal, <span class="grad">in your browser.</span></h1>
-      <p class="sub">Each session boots an <b>isolated sandbox</b> with a real PTY — pipes, colors, <code>npm install</code>, dev servers with public URLs. No shell emulation. Share a live link. Sessions self-destruct in 24h; compute auto-renews.</p>
-      <div class="cta-row"><button class="btn" id="btn-new">＋ New session</button><button class="btn ghost" id="btn-sessions">My sessions</button></div>
-      <div class="hero-meta">
-        <div><b>24h</b>session TTL</div>
-        <div><b>1</b>sandbox per session</div>
-        <div><b>0</b>shell emulation</div>
+    <canvas id="hero-canvas" aria-hidden="true"></canvas>
+    <div class="hero-inner">
+      <div>
+        <span class="eyebrow"><span class="o-dot o-pulse"></span>&nbsp;ORIN CONSOLE</span>
+        <h1>A real Linux environment. Anywhere.<span class="thin">Launch an isolated Linux workspace directly from your browser.</span></h1>
+        <p class="lede">No containers to configure, no SSH keys, no emulation. A <b>real PTY</b> in an <b>isolated sandbox</b> — pipes, colors, package installs, dev servers with public URLs.</p>
+        <div class="cta-row">
+          <button class="o-btn" id="btn-launch">Launch Console</button>
+          <button class="o-btn o-btn--ghost" id="btn-learn">Learn more</button>
+        </div>
+        <div class="hero-proof" aria-label="Facts">
+          <div><b>24h</b>session lifecycle</div>
+          <div><b>1:1</b>sandbox per session</div>
+          <div><b>0</b>shell emulation</div>
+        </div>
       </div>
-    </div>
-    <div class="win" aria-hidden="true">
-      <div class="win-bar"><i></i><i></i><i></i><span>orin@cns_9f2e — zsh</span></div>
-      <div class="win-body"><span class="c">$</span> <span class="p">npm install</span> sharp<br /><span class="d">added 12 packages in 3s ✓</span><br /><span class="c">$</span> <span class="p">node server.js &amp;</span><br /><span class="d">↗ live at https://3000-…vercel.run</span><br /><span class="c">$</span> <span class="p">curl localhost:3000/health</span><br /><span class="d">{"status":"ok"}</span><br /><span class="c">$</span> <span class="caret"></span></div>
+      <div class="scene" aria-hidden="true">
+        <div class="scene-bar"><i></i><i></i><i></i><span>orin@cns_9f2e — live</span></div>
+        <div class="scene-body" id="scene-body"></div>
+      </div>
     </div>
   </div>
 
-  <div class="card" id="login-card"><h2>Sign in <span class="sub">· same account as Orin Chat</span></h2>
-    <p class="desc">One account across Chat, Console and Router. Sessions are yours alone until you share them.</p>
-    <div class="row" style="margin-bottom:4px">
-      <div class="tabs"><button id="tab-login" class="on">Sign in</button><button id="tab-register">Create account</button></div>
-      <span class="sp"></span><span class="mut" id="who"></span>
+  <div class="section" id="features">
+    <div class="section-head"><h2>Built like infrastructure, not a demo</h2><p>Every keystroke reaches a real shell. Everything else is honest engineering around it.</p></div>
+    <div class="feat-grid">
+      <div class="o-card feat"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 12l2 2 4-4"/></svg><h3>Isolated by default</h3><p>One sandbox per session. Your filesystem, processes and network are yours alone — destroyed with the session.</p></div>
+      <div class="o-card feat"><svg viewBox="0 0 24 24"><path d="M5 7l4 4-4 4M11 17h8"/></svg><h3>A real PTY</h3><p>Driven through <span class="o-code">tmux</span> — job control, colors, pagers, interactive programs. The browser never parses your shell.</p></div>
+      <div class="o-card feat"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8 11l8-4M8 13l8 4"/></svg><h3>Shareable sessions</h3><p>Read-only links for demos, live-terminal links for pairing. Random tokens, hashed server-side, revocable anytime.</p></div>
+      <div class="o-card feat"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 3"/></svg><h3>24-hour lifecycle</h3><p>Sessions, history and links self-destruct after 24 hours. Compute renews transparently behind the scenes.</p></div>
     </div>
-    <div id="pane-login">
-      <label>Email or phone</label><input id="li-id" placeholder="you@example.com" autocomplete="username" />
-      <label>Password</label><input id="li-pw" type="password" autocomplete="current-password" />
-      <div class="row" style="margin-top:14px"><button class="btn" id="btn-login">Sign in</button><button class="btn ghost" id="btn-logout">Sign out</button><span class="mut" id="li-msg"></span></div>
-    </div>
-    <div id="pane-register" class="hidden">
-      <div class="grid" style="grid-template-columns:1fr 1fr">
-        <div><label>Name</label><input id="rg-name" placeholder="Your name" autocomplete="name" /></div>
-        <div><label>Phone</label><input id="rg-phone" placeholder="+9477…" autocomplete="tel" /></div>
-      </div>
-      <label>Email</label><input id="rg-email" placeholder="you@example.com" autocomplete="email" />
-      <div class="grid" style="grid-template-columns:1fr 1fr">
-        <div><label>Password</label><input id="rg-pw" type="password" autocomplete="new-password" /></div>
-        <div><label>Confirm password</label><input id="rg-pw2" type="password" autocomplete="new-password" /></div>
-      </div>
-      <div class="row" style="margin-top:14px"><button class="btn" id="btn-register">Create account</button><span class="mut" id="rg-msg"></span></div>
-    </div>
-    <details><summary class="mut">Advanced: use a token instead</summary>
-      <label>Orin session or MCP credential</label><input id="token" type="password" placeholder="orin session or orin_mcp_…" autocomplete="off" />
-      <div class="row" style="margin-top:12px"><button class="btn ghost small" id="btn-save">Save token</button><button class="btn ghost small" id="btn-clear">Forget</button></div>
-    </details>
   </div>
 
-  <div class="card hidden" id="newcard"><h2>New session</h2>
-    <p class="desc">A fresh sandbox boots in seconds. Env vars are injected by the platform — never typed, never echoed.</p>
-    <div class="grid" style="grid-template-columns:1fr 1fr 1fr">
-      <div><label>Columns</label><input id="n-cols" type="number" value="100" min="40" max="250" /></div>
-      <div><label>Rows</label><input id="n-rows" type="number" value="30" min="10" max="80" /></div>
-      <div><label>Expose ports</label><input id="n-ports" placeholder="3000, 5173" /></div>
+  <div class="section" id="access">
+    <div class="o-panel" id="login-card">
+      <h2>Sign in <span class="o-sub">· same account as Orin Chat</span></h2>
+      <p class="o-desc">One account across Chat, Console and Router. Sessions are yours alone until you share them.</p>
+      <div class="o-row" style="margin-bottom:4px">
+        <div class="o-tabs" id="auth-tabs" role="tablist" aria-label="Sign in or create account">
+          <button data-tab="login" aria-selected="true" id="tab-login" role="tab">Sign in</button>
+          <button data-tab="register" aria-selected="false" id="tab-register" role="tab">Create account</button>
+        </div>
+        <span class="o-sp"></span><span class="o-mut" id="who" role="status"></span>
+      </div>
+      <div id="pane-login" data-pane="login" role="tabpanel">
+        <div class="o-field"><label for="li-id">Email or phone</label><input class="o-input" id="li-id" placeholder="you@example.com" autocomplete="username" /></div>
+        <div class="o-field"><label for="li-pw">Password</label><input class="o-input" id="li-pw" type="password" autocomplete="current-password" /></div>
+        <div class="o-row" style="margin-top:14px"><button class="o-btn" id="btn-login">Sign in</button><button class="o-btn o-btn--ghost" id="btn-logout">Sign out</button><span class="o-mut" id="li-msg" role="alert"></span></div>
+      </div>
+      <div id="pane-register" data-pane="register" role="tabpanel" class="o-hidden">
+        <div class="o-grid" style="grid-template-columns:1fr 1fr">
+          <div class="o-field"><label for="rg-name">Name</label><input class="o-input" id="rg-name" placeholder="Your name" autocomplete="name" /></div>
+          <div class="o-field"><label for="rg-phone">Phone</label><input class="o-input" id="rg-phone" placeholder="+9477…" autocomplete="tel" /></div>
+        </div>
+        <div class="o-field"><label for="rg-email">Email</label><input class="o-input" id="rg-email" placeholder="you@example.com" autocomplete="email" /></div>
+        <div class="o-grid" style="grid-template-columns:1fr 1fr">
+          <div class="o-field"><label for="rg-pw">Password</label><input class="o-input" id="rg-pw" type="password" autocomplete="new-password" /></div>
+          <div class="o-field"><label for="rg-pw2">Confirm password</label><input class="o-input" id="rg-pw2" type="password" autocomplete="new-password" /></div>
+        </div>
+        <div class="o-row" style="margin-top:14px"><button class="o-btn" id="btn-register">Create account</button><span class="o-mut" id="rg-msg" role="alert"></span></div>
+      </div>
+      <details><summary class="o-mut">Advanced: use a token instead</summary>
+        <div class="o-field"><label for="token">Orin session or MCP credential</label><input class="o-input" id="token" type="password" placeholder="orin session or orin_mcp_…" autocomplete="off" /></div>
+        <div class="o-row" style="margin-top:12px"><button class="o-btn o-btn--ghost o-btn--sm" id="btn-save">Save token</button><button class="o-btn o-btn--ghost o-btn--sm" id="btn-clear">Forget</button></div>
+      </details>
     </div>
-    <label>Env vars · NAME=value per line</label><textarea id="n-env" placeholder="API_KEY=sk-…&#10;NODE_ENV=production"></textarea>
-    <div class="row" style="margin-top:14px"><button class="btn" id="btn-create">⚡ Boot sandbox</button><span class="mut" id="create-msg"></span></div>
   </div>
 
-  <div class="card hidden" id="listcard"><h2>Your sessions</h2><p class="desc">Pick up where you left off — history replays on open.</p><div id="sessions"></div></div>
+  <div class="section o-hidden" id="sessions-sec">
+    <div class="o-panel" id="listcard">
+      <h2>Your sessions</h2>
+      <p class="o-desc">Pick up where you left off — history replays on open.</p>
+      <div id="sessions"></div>
+    </div>
+  </div>
 
-  <div class="grid" style="margin-top:6px">
-    <div class="feat"><div class="ico">🔒</div><h3>Isolated</h3><p>One sandbox per session. Your keystrokes go to a real tmux PTY — the frontend never parses or emulates a shell.</p></div>
-    <div class="feat"><div class="ico">🔗</div><h3>Shareable</h3><p>Read-only links for demos, live-terminal links for pairing. Random tokens, hashed server-side, revocable.</p></div>
-    <div class="feat"><div class="ico">⏳</div><h3>Ephemeral</h3><p>24h TTL on sessions, history and links — enforced on every request. Sandboxes auto-renew behind the scenes.</p></div>
+  <div class="section o-hidden" id="new-sec">
+    <div class="o-panel" id="newcard">
+      <h2>New session</h2>
+      <p class="o-desc">A fresh sandbox boots in seconds. Env vars are injected by the platform — never typed, never echoed.</p>
+      <div class="o-grid" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="o-field"><label for="n-cols">Columns</label><input class="o-input" id="n-cols" type="number" value="100" min="40" max="250" /></div>
+        <div class="o-field"><label for="n-rows">Rows</label><input class="o-input" id="n-rows" type="number" value="30" min="10" max="80" /></div>
+        <div class="o-field"><label for="n-ports">Expose ports</label><input class="o-input" id="n-ports" placeholder="3000, 5173" /></div>
+      </div>
+      <div class="o-field"><label for="n-env">Env vars · NAME=value per line</label><textarea class="o-textarea" id="n-env" placeholder="API_KEY=sk-…&#10;NODE_ENV=production"></textarea></div>
+      <div class="o-row" style="margin-top:14px"><button class="o-btn" id="btn-create">⚡ Boot sandbox</button><span class="o-mut" id="create-msg" role="status"></span></div>
+    </div>
   </div>
 </section>
 
-<!-- TERMINAL -->
-<section id="view-term" class="hidden">
-  <div class="termbar">
-    <button class="btn ghost small" id="btn-back">← Sessions</button>
-    <span class="pill" id="t-meta"></span>
-    <span class="sp"></span>
-    <span class="ttl" id="t-ttl"></span>
-    <button class="btn danger small" id="btn-destroy">Destroy</button>
-  </div>
-  <div class="termwrap">
-    <div class="win-bar"><i></i><i></i><i></i><span id="t-title">orin console</span></div>
-    <div id="term"></div>
-  </div>
-  <div class="card"><h2>Share this session</h2>
-    <p class="desc">Read-only for demos · live-terminal for pairing. Links die with the session.</p>
-    <div class="row"><button class="btn ghost small" id="btn-share-read">⧉ Copy read link</button><button class="btn ghost small" id="btn-share-term">⧉ Copy live-terminal link</button></div>
-    <div id="shares" style="margin-top:6px"></div>
+<!-- ================= APP ================= -->
+<section id="view-term" class="o-hidden" aria-label="Console terminal">
+  <div class="app">
+    <div class="sessionbar">
+      <button class="o-iconbtn" id="btn-back" data-otip="Back to sessions" aria-label="Back to sessions">←</button>
+      <span class="mark">ORIN&nbsp;CONSOLE</span>
+      <span class="sep"></span>
+      <span class="o-badge o-badge--ok"><span class="o-dot o-pulse"></span>&nbsp;Connected · Linux</span>
+      <span class="meta host o-mono" id="t-meta"></span>
+      <span class="grow"></span>
+      <span class="ttl" id="t-ttl" role="timer" aria-label="Session time remaining"></span>
+      <button class="o-iconbtn" id="btn-copy" data-otip="Copy selection" aria-label="Copy terminal selection">⧉</button>
+      <button class="o-iconbtn" id="btn-paste" data-otip="Paste from clipboard" aria-label="Paste from clipboard">📋</button>
+      <button class="o-iconbtn" id="btn-share" data-otip="Share session" aria-label="Share session">🔗</button>
+      <button class="o-iconbtn" id="btn-settings" data-otip="Settings" aria-label="Terminal settings">⚙</button>
+      <button class="o-iconbtn" id="btn-restart" data-otip="Restart shell" aria-label="Restart shell">↻</button>
+      <button class="o-iconbtn" id="btn-destroy" data-otip="Terminate session" aria-label="Terminate session" style="color:var(--orin-bad)">⏻</button>
+    </div>
+    <div class="stage"><div id="term" role="application" aria-label="Linux terminal"></div></div>
+    <div class="statusbar" aria-label="Session status">
+      <span id="sb-state"><span class="ok">●</span> live</span>
+      <span id="sb-cwd" class="hide-s">~</span>
+      <span class="grow"></span>
+      <span id="sb-size" class="hide-s">100×30</span>
+      <span id="sb-id"></span>
+    </div>
   </div>
 </section>
 
-<!-- GUEST -->
-<section id="view-guest" class="hidden">
-  <div class="termbar">
-    <span class="pill" id="g-meta"></span>
-    <span class="sp"></span>
-    <span class="ttl" id="g-ttl"></span>
+<!-- ================= GUEST ================= -->
+<section id="view-guest" class="o-hidden" aria-label="Shared session">
+  <div class="app">
+    <div class="sessionbar">
+      <span class="mark">ORIN&nbsp;CONSOLE</span>
+      <span class="sep"></span>
+      <span class="meta o-mono" id="g-meta"></span>
+      <span class="grow"></span>
+      <span class="ttl" id="g-ttl" role="timer"></span>
+    </div>
+    <div class="stage"><div id="term-g" role="application" aria-label="Shared terminal"></div></div>
+    <div class="statusbar"><span id="g-note"></span></div>
   </div>
-  <div class="termwrap">
-    <div class="win-bar"><i></i><i></i><i></i><span>shared session · orin console</span></div>
-    <div id="term-g"></div>
-  </div>
-  <p class="mut" id="g-note" style="margin-top:12px"></p>
 </section>
 </main>
-<footer><span>© 2026 Orin AI · Januth Nimnal</span><a href="https://orinai.org">orinai.org</a><a href="https://chat.orinai.org">Chat</a><a href="https://tools.orinai.org">Tools</a><a href="https://mcp.orinai.org">MCP</a></footer>
-<div id="toast"></div>
+
+<footer id="site-footer">
+  <span>© 2026 Orin AI · Januth Nimnal</span>
+  <a href="https://orinai.org">orinai.org</a><a href="https://chat.orinai.org">Chat</a>
+  <a href="https://router.orinai.org">Router</a><a href="https://tools.orinai.org">Tools</a><a href="https://mcp.orinai.org">MCP</a>
+</footer>
+
+<!-- share modal -->
+<div class="o-modalback" id="share-modal" role="dialog" aria-modal="true" aria-labelledby="share-title">
+  <div class="o-modal">
+    <h2 id="share-title">Share console</h2>
+    <p class="o-mut" style="font-size:14px;margin:6px 0 4px">Anyone with this link can access this session. Links die with the session — env vars are never shared.</p>
+    <div class="o-mut" style="font-size:12.5px;font-weight:700;letter-spacing:.06em;margin:14px 0 2px">PERMISSION</div>
+    <label class="perm"><input type="radio" name="share-mode" value="read" checked /><span><b>👁 View only</b><span>Watch the terminal live. Cannot type. Safe to post anywhere.</span></span></label>
+    <label class="perm"><input type="radio" name="share-mode" value="terminal" /><span><b>⌨ Terminal access</b><span>Full shell access in your sandbox. Only share with people you trust.</span></span></label>
+    <div class="warnbox o-hidden" id="share-warn">⚠ Terminal access lets anyone with the link run commands, read files and use network in <b>your</b> sandbox. Share privately, revoke when done.</div>
+    <div class="linkout o-hidden" id="share-out"><input class="o-input" id="share-link" readonly aria-label="Share link" /><button class="o-btn o-btn--sm" id="share-copy">Copy</button></div>
+    <div class="sharelist" id="shares"></div>
+    <div class="o-actions"><button class="o-btn o-btn--ghost" id="share-close">Close</button><button class="o-btn" id="share-create">Create link</button></div>
+  </div>
+</div>
+
+<!-- settings modal -->
+<div class="o-modalback" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+  <div class="o-modal">
+    <h2 id="settings-title">Terminal settings</h2>
+    <p class="o-mut" style="font-size:14px;margin:6px 0 4px">Display-only preferences. The shell itself is untouched.</p>
+    <div class="o-field"><label for="set-font">Font size · <span id="set-font-v">14</span>px</label><input type="range" id="set-font" min="11" max="20" value="14" style="padding:0" /></div>
+    <label class="o-check"><input type="checkbox" id="set-blink" checked /> Blinking cursor</label>
+    <div class="o-grid" style="grid-template-columns:1fr 1fr">
+      <div class="o-field"><label for="set-cols">Columns</label><input class="o-input" id="set-cols" type="number" min="40" max="250" /></div>
+      <div class="o-field"><label for="set-rows">Rows</label><input class="o-input" id="set-rows" type="number" min="10" max="80" /></div>
+    </div>
+    <table class="keys-table" aria-label="Keyboard shortcuts">
+      <tr><td><span class="kbd">Ctrl+C</span></td><td>interrupt</td><td><span class="kbd">Ctrl+D</span></td><td>end input</td></tr>
+      <tr><td><span class="kbd">Ctrl+L</span></td><td>clear screen</td><td><span class="kbd">↑ ↓</span></td><td>history</td></tr>
+    </table>
+    <div class="o-actions"><button class="o-btn o-btn--ghost" id="settings-close">Close</button><button class="o-btn" id="settings-apply">Apply</button></div>
+  </div>
+</div>
+
+<!-- confirm modal -->
+<div class="o-modalback" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="o-modal" style="width:min(440px,100%)">
+    <h2 id="confirm-title">Are you sure?</h2>
+    <p class="o-mut" id="confirm-desc" style="font-size:14px"></p>
+    <div class="o-actions"><button class="o-btn o-btn--ghost" id="confirm-no">Cancel</button><button class="o-btn" id="confirm-yes">Confirm</button></div>
+  </div>
+</div>
+
 <script type="module">
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-const $ = (id) => document.getElementById(id);
-let toastTimer = null;
-function toast(msg) {
-  const el = $('toast'); el.textContent = msg; el.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
-}
-async function copyText(s) {
-  try { await navigator.clipboard.writeText(s); return true; }
-  catch {
-    const ta = document.createElement('textarea'); ta.value = s; document.body.appendChild(ta);
-    ta.select(); let ok = false; try { ok = document.execCommand('copy'); } catch {}
-    ta.remove(); return ok;
-  }
-}
+const { $, toast, copyText, modal, tabs, busy } = window.OrinUI;
 const api = async (path, opts = {}) => {
   const t = localStorage.getItem('orin_token') || '';
   const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t, ...(opts.headers || {}) } });
@@ -285,8 +237,102 @@ const api = async (path, opts = {}) => {
   if (!r.ok) throw new Error(j.error || 'request failed');
   return j;
 };
-const show = (id) => { for (const v of ['view-home','view-term','view-guest']) $(v).classList.add('hidden'); $(id).classList.remove('hidden'); };
-// ---------- auth ----------
+const show = (id) => {
+  for (const v of ['view-home', 'view-term', 'view-guest']) $(v).classList.add('o-hidden');
+  $(id).classList.remove('o-hidden');
+  $('site-footer').style.display = id === 'view-home' ? '' : 'none';
+  window.scrollTo(0, 0);
+};
+function askConfirm(title, desc, yesLabel, fn) {
+  $('confirm-title').textContent = title;
+  $('confirm-desc').textContent = desc;
+  $('confirm-yes').textContent = yesLabel;
+  const m = modal('confirm-modal');
+  $('confirm-yes').onclick = () => { m.close(); fn(); };
+  $('confirm-no').onclick = () => m.close();
+  m.open();
+}
+
+/* ---------- hero: canvas grid + typed terminal scene ---------- */
+(function hero() {
+  const cv = $('hero-canvas');
+  const scene = $('scene-body');
+  const lines = [
+    ['c', '$ '], ['p', 'npm install sharp'],
+    ['d', 'added 12 packages in 3s ✓'],
+    ['c', '$ '], ['p', 'node server.js &'],
+    ['d', '↗ live at https://3000-….vercel.run'],
+    ['c', '$ '], ['p', 'curl localhost:3000/health'],
+    ['d', '{"status":"ok"}'],
+  ];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // static fallback (reduced motion, tiny screens, canvas failure)
+  function staticScene() {
+    scene.innerHTML = lines.map(([k, t]) => `<span class="${k}"></span>`).join('<br />') ;
+    [...scene.querySelectorAll('span')].forEach((s, i) => { s.textContent = lines[i][1]; });
+    const c = document.createElement('span'); c.className = 'caret'; scene.appendChild(c);
+  }
+  let started = false;
+  function start() {
+    if (started) return; started = true;
+    if (reduce || !cv.getContext || innerWidth < 640) { cv.remove(); staticScene(); return; }
+    // --- ambient canvas: faint grid + drifting motes ---
+    const ctx = cv.getContext('2d');
+    const parent = cv.parentElement.getBoundingClientRect();
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    cv.width = parent.width * dpr; cv.height = parent.height * dpr;
+    const W = parent.width, H = parent.height;
+    const motes = Array.from({ length: Math.min(70, W / 14) }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: .6 + Math.random() * 1.6, s: .08 + Math.random() * .25, o: .15 + Math.random() * .4,
+    }));
+    let raf = 0, visible = true;
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
+      if (!visible || document.hidden) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(148,184,255,.055)'; ctx.lineWidth = 1;
+      const g = 44;
+      ctx.beginPath();
+      for (let x = (W / 2) % g; x < W; x += g) { ctx.moveTo(x, 0); ctx.lineTo(x, H); }
+      for (let y = 0; y < H; y += g) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
+      ctx.stroke();
+      for (const m of motes) {
+        m.y -= m.s; if (m.y < -4) { m.y = H + 4; m.x = Math.random() * W; }
+        ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, 7);
+        ctx.fillStyle = `rgba(94,234,212,${m.o})`; ctx.fill();
+      }
+    };
+    draw();
+    new IntersectionObserver((es) => { visible = es[0].isIntersecting; }).observe(cv);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) cancelAnimationFrame(raf); else draw(); });
+    addEventListener('beforeunload', () => cancelAnimationFrame(raf));
+    // --- typed scene ---
+    scene.innerHTML = '';
+    let li = 0;
+    const caret = document.createElement('span'); caret.className = 'caret';
+    function nextLine() {
+      if (li >= lines.length) { scene.appendChild(caret); return; }
+      const [k, text] = lines[li++];
+      const s = document.createElement('span'); s.className = k; scene.appendChild(s);
+      if (k === 'd') { s.textContent = text; scene.appendChild(document.createElement('br')); setTimeout(nextLine, 420); return; }
+      let i = 0;
+      scene.appendChild(caret);
+      const tick = () => {
+        s.textContent = text.slice(0, ++i);
+        if (i < text.length) setTimeout(tick, 34 + Math.random() * 46);
+        else { caret.remove(); scene.appendChild(document.createElement('br')); setTimeout(nextLine, k === 'c' ? 200 : 500); }
+      };
+      tick();
+    }
+    setTimeout(nextLine, 500);
+  }
+  if ('IntersectionObserver' in window) new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { start(); o.disconnect(); } }).observe($('view-home'));
+  else start();
+})();
+
+/* ---------- auth ---------- */
 const CORE = 'https://orinai.org';
 async function coreLogin(action, body) {
   const r = await fetch(CORE + '/api/auth/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...body }) });
@@ -304,120 +350,134 @@ function paintWho() {
   const label = u ? `${u.email || u.name || 'you'}` : '';
   const w = $('who'); if (w) w.textContent = label ? `signed in as ${label}` : '';
   const chip = $('nav-user'), nw = $('nav-who');
-  if (chip && nw) { if (label) { nw.textContent = label; chip.classList.remove('hidden'); } else chip.classList.add('hidden'); }
+  if (chip && nw) { if (label) { nw.textContent = label; chip.classList.remove('o-hidden'); } else chip.classList.add('o-hidden'); }
 }
-function setTab(which) {
-  const login = which === 'login';
-  $('tab-login').classList.toggle('on', login);
-  $('tab-register').classList.toggle('on', !login);
-  $('pane-login').classList.toggle('hidden', !login);
-  $('pane-register').classList.toggle('hidden', login);
-}
-$('tab-login').onclick = () => setTab('login');
-$('tab-register').onclick = () => setTab('register');
-async function busy(btn, fn) {
-  const old = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
-  try { await fn(); } finally { btn.disabled = false; btn.innerHTML = old; }
-}
+tabs('auth-tabs');
 $('btn-login').onclick = () => busy($('btn-login'), async () => {
   try {
     await coreLogin('login', { identifier: $('li-id').value.trim(), password: $('li-pw').value });
     $('li-msg').textContent = ''; $('li-pw').value = '';
-    toast('Signed in ✓');
-    refresh();
+    toast('Signed in ✓'); refresh();
   } catch (e) { $('li-msg').textContent = e.message; }
 });
 $('btn-register').onclick = () => busy($('btn-register'), async () => {
   try {
     await coreLogin('register', { name: $('rg-name').value.trim(), email: $('rg-email').value.trim(), phone: $('rg-phone').value.trim(), password: $('rg-pw').value, confirmPassword: $('rg-pw2').value });
     $('rg-msg').textContent = ''; $('rg-pw').value = ''; $('rg-pw2').value = '';
-    toast('Account created ✓');
-    refresh();
+    toast('Account created ✓'); refresh();
   } catch (e) { $('rg-msg').textContent = e.message; }
 });
-$('btn-logout').onclick = () => { signOut(); $('listcard').classList.add('hidden'); toast('Signed out'); };
+$('btn-logout').onclick = () => { signOut(); $('sessions-sec').classList.add('o-hidden'); toast('Signed out'); };
 $('btn-save').onclick = () => { localStorage.setItem('orin_token', $('token').value.trim()); localStorage.removeItem('orin_user'); paintWho(); refresh(); };
-$('btn-clear').onclick = () => { signOut(); $('token').value=''; $('listcard').classList.add('hidden'); };
+$('btn-clear').onclick = () => { signOut(); $('token').value = ''; $('sessions-sec').classList.add('o-hidden'); };
 paintWho();
-// ---------- owner home ----------
-$('btn-new').onclick = () => { const c = $('newcard'); c.classList.toggle('hidden'); if (!c.classList.contains('hidden')) c.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
-$('btn-sessions').onclick = () => { refresh(); $('listcard').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+
+/* ---------- landing actions ---------- */
+$('btn-launch').onclick = () => {
+  if (localStorage.getItem('orin_token')) {
+    $('new-sec').classList.remove('o-hidden');
+    $('new-sec').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    refresh();
+  } else {
+    $('login-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+};
+$('btn-learn').onclick = () => $('features').scrollIntoView({ behavior: 'smooth' });
 $('btn-create').onclick = () => busy($('btn-create'), async () => {
   try {
     $('create-msg').textContent = 'booting sandbox…';
     const env = {};
-    for (const line of $('n-env').value.split('\n')) { const i = line.indexOf('='); if (i > 0) env[line.slice(0,i).trim()] = line.slice(i+1); }
-    const ports = $('n-ports').value.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>Number.isInteger(n));
-    const { session } = await api('/api/sessions', { method:'POST', body: JSON.stringify({ cols:+$('n-cols').value||100, rows:+$('n-rows').value||30, env, ports }) });
+    for (const line of $('n-env').value.split('\n')) { const i = line.indexOf('='); if (i > 0) env[line.slice(0, i).trim()] = line.slice(i + 1); }
+    const ports = $('n-ports').value.split(',').map((s) => parseInt(s.trim(), 10)).filter((n) => Number.isInteger(n));
+    const { session } = await api('/api/sessions', { method: 'POST', body: JSON.stringify({ cols: +$('n-cols').value || 100, rows: +$('n-rows').value || 30, env, ports }) });
     location.hash = '#/t/' + session.id; route();
-  } catch(e){ $('create-msg').textContent = e.message; }
+  } catch (e) { $('create-msg').textContent = e.message; }
 });
-async function refresh(){
-  if (!localStorage.getItem('orin_token')) { $('listcard').classList.add('hidden'); return; }
+async function refresh() {
+  if (!localStorage.getItem('orin_token')) { $('sessions-sec').classList.add('o-hidden'); return; }
   try {
     const { sessions } = await api('/api/sessions');
-    $('listcard').classList.remove('hidden');
-    $('sessions').innerHTML = sessions.length ? '' : '<div class="empty">No live sessions yet — boot one above.</div>';
+    $('sessions-sec').classList.remove('o-hidden');
+    $('new-sec').classList.remove('o-hidden');
+    $('sessions').innerHTML = sessions.length ? '' : '<div class="o-empty">No live sessions yet — configure and boot one below.</div>';
     for (const s of sessions) {
-      const d = document.createElement('div'); d.className='sess';
-      d.innerHTML = `<span class="sdot"></span><span style="flex:1;min-width:0"><span class="sid">${s.id}</span><br /><span class="smeta">${s.cols}×${s.rows} · started ${new Date(s.createdAt).toLocaleString()}</span></span><span class="ttl" data-exp="${s.expiresAt}"></span>`;
-      const b = document.createElement('button'); b.className='btn ghost small'; b.textContent='Open →'; b.onclick=()=>{ location.hash='#/t/'+s.id; route(); };
+      const d = document.createElement('div'); d.className = 'o-panel'; d.style.cssText = 'display:flex;gap:14px;align-items:center;padding:14px 18px;margin:10px 0';
+      d.innerHTML = `<span class="o-dot"></span><span style="flex:1;min-width:0"><span class="o-mono">${s.id}</span><br /><span class="o-mut" style="font-size:12.5px">${s.cols}×${s.rows} · started ${new Date(s.createdAt).toLocaleString()}</span></span><span class="ttl" data-exp="${s.expiresAt}"></span>`;
+      const b = document.createElement('button'); b.className = 'o-btn o-btn--ghost o-btn--sm'; b.textContent = 'Open →';
+      b.onclick = () => { location.hash = '#/t/' + s.id; route(); };
       d.appendChild(b); $('sessions').appendChild(d);
     }
     tickTtls();
-  } catch(e){ $('sessions').innerHTML = `<div class="empty">${e.message}</div>`; $('listcard').classList.remove('hidden'); }
+  } catch (e) { $('sessions').innerHTML = `<div class="o-empty">${e.message}</div>`; $('sessions-sec').classList.remove('o-hidden'); }
 }
-function tickTtls(){
-  document.querySelectorAll('[data-exp]').forEach(el=>{
-    const ms = new Date(el.dataset.exp).getTime() - Date.now();
-    el.textContent = ms<=0 ? 'expired' : `⏳ ${Math.floor(ms/3600000)}h ${Math.floor(ms%3600000/60000)}m left`;
-  });
+function ttlText(ms) {
+  if (ms <= 0) return 'expired';
+  const h = Math.floor(ms / 3600000), m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? `${h}h ${m}m left` : `${m}m left`;
+}
+function paintTtl(el, ms) {
+  el.textContent = ms <= 0 ? 'expired' : `⏳ ${ttlText(ms)}`;
+  el.classList.toggle('warn', ms > 0 && ms < 3600000);
+  el.classList.toggle('crit', ms > 0 && ms < 900000);
+}
+function tickTtls() {
+  document.querySelectorAll('[data-exp]').forEach((el) => paintTtl(el, new Date(el.dataset.exp).getTime() - Date.now()));
 }
 setInterval(tickTtls, 30000);
-// ---------- terminal core ----------
-function makeTerm(el){
-  const t = new Terminal({ cursorBlink:true, fontFamily:'"JetBrains Mono",monospace', fontSize:14, theme:{background:'#04070d',foreground:'#d7e3ff',cursor:'#5eead4',selectionBackground:'rgba(94,234,212,.25)'} });
+
+/* ---------- terminal core (unchanged protocol) ---------- */
+let termApi = null;
+function makeTerm() {
+  const t = new Terminal({
+    cursorBlink: localStorage.getItem('orin_blink') !== '0',
+    fontFamily: '"JetBrains Mono",monospace',
+    fontSize: Number(localStorage.getItem('orin_font') || 14),
+    theme: { background: '#030509', foreground: '#d7e3ff', cursor: '#5eead4', selectionBackground: 'rgba(94,234,212,.25)' },
+  });
   const fit = new FitAddon(); t.loadAddon(fit);
   return { t, fit };
 }
-async function streamLoop({ inputUrl, streamUrl, termApi, onMeta }) {
+async function streamLoop({ inputUrl, streamUrl, onMeta }) {
   const { t, fit } = termApi;
   let lastScreen = '', since = 0, alive = true;
-  const post = (body) => fetch(inputUrl, { method:'POST', headers:{'Content-Type':'application/json', ...(localStorage.getItem('orin_token')?{Authorization:'Bearer '+localStorage.getItem('orin_token')}:{})}, body: JSON.stringify(body) });
+  const authz = () => ({ 'Content-Type': 'application/json', ...(localStorage.getItem('orin_token') ? { Authorization: 'Bearer ' + localStorage.getItem('orin_token') } : {}) });
+  const post = (body) => fetch(inputUrl, { method: 'POST', headers: authz(), body: JSON.stringify(body) });
+  termApi.post = post;
   t.onData((d) => {
     if (!alive) return;
-    if (d === '\r') post({ key:'Enter' });
-    else if (d === '\x03') post({ key:'C-c' });
-    else if (d === '\x04') post({ key:'C-d' });
-    else if (d === '\x7f') post({ key:'BSpace' });
-    else if (d === '\x1b') post({ key:'Escape' });
-    else if (d === '\t') post({ key:'Tab' });
-    else if (d === '\x1b[A') post({ key:'Up' });
-    else if (d === '\x1b[B') post({ key:'Down' });
-    else if (d === '\x1b[C') post({ key:'Right' });
-    else if (d === '\x1b[D') post({ key:'Left' });
+    if (d === '\r') post({ key: 'Enter' });
+    else if (d === '\x03') post({ key: 'C-c' });
+    else if (d === '\x04') post({ key: 'C-d' });
+    else if (d === '\x0c') post({ key: 'C-l' });
+    else if (d === '\x7f') post({ key: 'BSpace' });
+    else if (d === '\x1b') post({ key: 'Escape' });
+    else if (d === '\t') post({ key: 'Tab' });
+    else if (d === '\x1b[A') post({ key: 'Up' });
+    else if (d === '\x1b[B') post({ key: 'Down' });
+    else if (d === '\x1b[C') post({ key: 'Right' });
+    else if (d === '\x1b[D') post({ key: 'Left' });
     else if (d >= ' ' || d === '\n') post({ text: d });
   });
-  t.onResize(({cols,rows}) => post({ cols, rows }).catch(()=>{}));
-  new ResizeObserver(()=>{ try{fit.fit();}catch{} }).observe(t.element);
+  t.onResize(({ cols, rows }) => { post({ cols, rows }).catch(() => {}); $('sb-size').textContent = `${cols}×${rows}`; });
+  new ResizeObserver(() => { try { fit.fit(); } catch {} }).observe(t.element);
   (async () => {
     while (alive) {
       try {
-        const r = await fetch(streamUrl, { method:'POST', headers:{'Content-Type':'application/json', ...(localStorage.getItem('orin_token')?{Authorization:'Bearer '+localStorage.getItem('orin_token')}:{})}, body: JSON.stringify({ lastScreen, since }) });
-        if (!r.ok || !r.body) { t.writeln('\r\n[session ended]'); alive=false; break; }
-        const reader = r.body.getReader(); const dec = new TextDecoder(); let buf='';
+        const r = await fetch(streamUrl, { method: 'POST', headers: authz(), body: JSON.stringify({ lastScreen, since }) });
+        if (!r.ok || !r.body) { t.writeln('\r\n[session ended]'); $('sb-state').innerHTML = '<span style="color:var(--orin-bad)">●</span> ended'; alive = false; break; }
+        const reader = r.body.getReader(); const dec = new TextDecoder(); let buf = '';
         for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
-          buf += dec.decode(value, { stream:true });
+          buf += dec.decode(value, { stream: true });
           let idx;
           while ((idx = buf.indexOf('\n\n')) >= 0) {
-            const chunk = buf.slice(0, idx); buf = buf.slice(idx+2);
+            const chunk = buf.slice(0, idx); buf = buf.slice(idx + 2);
             for (const line of chunk.split('\n')) {
               if (!line.startsWith('data: ')) continue;
               const msg = JSON.parse(line.slice(6));
-              if (msg.dead) { t.writeln('\r\n[session destroyed]'); alive=false; break; }
-              if (msg.screen !== undefined) { lastScreen = msg.screen; t.reset(); t.write(msg.screen.replace(/\n/g,'\r\n')); }
+              if (msg.dead) { t.writeln('\r\n[session destroyed]'); alive = false; break; }
+              if (msg.screen !== undefined) { lastScreen = msg.screen; t.reset(); t.write(msg.screen.replace(/\n/g, '\r\n')); }
               if (msg.cwd) onMeta(msg.cwd);
               if (msg.since) since = msg.since;
               if (msg.reconnect) break;
@@ -426,86 +486,139 @@ async function streamLoop({ inputUrl, streamUrl, termApi, onMeta }) {
           }
           if (!alive) break;
         }
-      } catch { await new Promise(r=>setTimeout(r,2000)); }
+      } catch { await new Promise((r) => setTimeout(r, 2000)); }
     }
   })();
   return () => { alive = false; };
 }
-// ---------- owner terminal ----------
-let stopTerm = null;
-async function openSession(id){
-  show('view-term'); $('t-meta').textContent = id; $('t-title').textContent = id;
+
+/* ---------- app ---------- */
+let stopTerm = null, currentId = null;
+async function openSession(id) {
+  currentId = id;
+  show('view-term');
+  $('t-meta').textContent = id;
+  $('sb-id').textContent = id;
+  $('sb-state').innerHTML = '<span class="ok">●</span> live';
   if (stopTerm) stopTerm();
-  const termApi = makeTerm($('term')); $('term').innerHTML=''; termApi.t.open($('term')); termApi.fit.fit();
+  termApi = makeTerm();
+  $('term').innerHTML = ''; termApi.t.open($('term')); termApi.fit.fit();
+  $('set-cols').value = termApi.t.cols; $('set-rows').value = termApi.t.rows;
   try {
     const { session } = await api('/api/sessions/' + id);
     const exp = new Date(session.expiresAt).getTime();
-    const tick = () => { const ms = exp - Date.now(); $('t-ttl').textContent = ms<=0?'expired':`⏳ ${Math.floor(ms/3600000)}h ${Math.floor(ms%3600000/60000)}m left`; };
+    const tick = () => paintTtl($('t-ttl'), exp - Date.now());
     tick(); const iv = setInterval(tick, 30000);
-    stopTerm = await streamLoop({ inputUrl:`/api/sessions/${id}/input`, streamUrl:`/api/sessions/${id}/stream`, termApi, onMeta:(cwd)=>{ $('t-meta').textContent = `${id} · ${cwd}`; } });
+    stopTerm = await streamLoop({
+      inputUrl: `/api/sessions/${id}/input`, streamUrl: `/api/sessions/${id}/stream`,
+      onMeta: (cwd) => { $('t-meta').textContent = `${id} · ${cwd}`; $('sb-cwd').textContent = cwd; },
+    });
     const origStop = stopTerm; stopTerm = () => { clearInterval(iv); origStop(); };
-  } catch(e){ termApi.t.writeln(e.message); }
-  $('btn-destroy').onclick = async () => { if(!confirm('Destroy this session and its sandbox?'))return; await api('/api/sessions/'+id,{method:'DELETE'}); location.hash='#/'; route(); };
-  $('btn-back').onclick = () => { if(stopTerm)stopTerm(); location.hash='#/'; route(); };
-  $('btn-share-read').onclick = () => shareLink(id, 'read');
-  $('btn-share-term').onclick = () => shareLink(id, 'terminal');
-  loadShares(id);
+  } catch (e) { termApi.t.writeln(e.message); }
 }
-async function shareLink(id, mode){
+$('btn-back').onclick = () => { if (stopTerm) stopTerm(); location.hash = '#/'; route(); };
+$('btn-copy').onclick = async () => {
+  const sel = termApi?.t.getSelection();
+  if (!sel) { toast('Nothing selected'); return; }
+  toast((await copyText(sel)) ? 'Selection copied ✓' : 'Copy blocked by browser');
+};
+$('btn-paste').onclick = async () => {
   try {
-    const { token } = await api(`/api/sessions/${id}/share`, { method:'POST', body: JSON.stringify({ mode }) });
-    const url = location.origin + '#/s/' + token;
-    const ok = await copyText(url);
-    const box = $('shares');
-    const row = document.createElement('div'); row.className = 'sharelink';
-    row.innerHTML = `<span>${mode === 'read' ? '👁' : '⌨'} ${mode}</span><span class="url"></span>`;
-    row.querySelector('.url').textContent = url;
-    const b = document.createElement('button'); b.className = 'btn ghost small'; b.textContent = 'Copy';
-    b.onclick = async () => { await copyText(url); toast('Link copied ✓'); };
-    row.appendChild(b); box.prepend(row);
-    toast(ok ? `${mode} link copied ✓ (token shown once)` : `${mode} link created — copy it now (token shown once)`);
-    loadShares(id);
-  } catch (e) { toast(e.message); }
-}
-async function loadShares(id){
+    const text = await navigator.clipboard.readText();
+    if (!text) { toast('Clipboard is empty'); return; }
+    await termApi?.post({ text: text.slice(0, 4096) });
+  } catch { toast('Clipboard read blocked — use Ctrl+V in the page'); }
+};
+$('btn-destroy').onclick = () => askConfirm('Terminate session?', 'The sandbox is stopped and all session data is deleted. This cannot be undone.', 'Terminate', async () => {
+  await api('/api/sessions/' + currentId, { method: 'DELETE' });
+  toast('Session terminated'); location.hash = '#/'; route();
+});
+$('btn-restart').onclick = () => askConfirm('Restart shell?', 'Clears the screen and resets the terminal state. Files and history are kept.', 'Restart', async () => {
+  await termApi?.post({ text: 'reset' }); await termApi?.post({ key: 'Enter' });
+  toast('Shell restarted');
+});
+
+/* ---------- share ---------- */
+const shareModal = () => modal('share-modal');
+$('btn-share').onclick = () => {
+  $('share-out').classList.add('o-hidden');
+  loadShares(currentId);
+  shareModal().open();
+};
+$('share-close').onclick = () => shareModal().close();
+document.querySelectorAll('input[name="share-mode"]').forEach((r) => r.addEventListener('change', () => {
+  $('share-warn').classList.toggle('o-hidden', document.querySelector('input[name="share-mode"]:checked').value !== 'terminal');
+}));
+$('share-create').onclick = () => busy($('share-create'), async () => {
+  const mode = document.querySelector('input[name="share-mode"]:checked').value;
+  const { token } = await api(`/api/sessions/${currentId}/share`, { method: 'POST', body: JSON.stringify({ mode }) });
+  const url = location.origin + '#/s/' + token;
+  $('share-link').value = url;
+  $('share-out').classList.remove('o-hidden');
+  toast((await copyText(url)) ? `${mode === 'read' ? 'View-only' : 'Terminal'} link copied ✓` : 'Link created — copy it now (shown once)');
+  loadShares(currentId);
+});
+$('share-copy').onclick = async () => toast((await copyText($('share-link').value)) ? 'Link copied ✓' : 'Copy blocked');
+async function loadShares(id) {
   try {
     const { shares } = await api(`/api/sessions/${id}/share`);
-    const box = $('shares');
-    box.querySelectorAll('.old').forEach((n) => n.remove());
-    if (!shares.length && !box.children.length) box.innerHTML = '<p class="mut">No active links yet.</p>';
-    else if (shares.length) {
-      const p = document.createElement('p'); p.className = 'mut mono old'; p.style.fontSize = '12px';
-      p.textContent = 'active: ' + shares.map((s) => `${s.mode} · ${new Date(s.createdAt).toLocaleString()}`).join('  |  ');
-      box.appendChild(p);
-    }
-  } catch { /* keep created links visible */ }
+    $('shares').innerHTML = shares.length
+      ? 'Active links:<br />' + shares.map((s) => `· ${s.mode} — ${new Date(s.createdAt).toLocaleString()}`).join('<br />')
+      : 'No active links yet.';
+  } catch { $('shares').textContent = ''; }
 }
-// ---------- guest ----------
-async function openGuest(token){
+
+/* ---------- settings ---------- */
+const settingsModal = () => modal('settings-modal');
+$('btn-settings').onclick = () => {
+  $('set-font').value = Number(localStorage.getItem('orin_font') || 14);
+  $('set-font-v').textContent = $('set-font').value;
+  $('set-blink').checked = localStorage.getItem('orin_blink') !== '0';
+  if (termApi) { $('set-cols').value = termApi.t.cols; $('set-rows').value = termApi.t.rows; }
+  settingsModal().open();
+};
+$('set-font').oninput = () => { $('set-font-v').textContent = $('set-font').value; };
+$('settings-close').onclick = () => settingsModal().close();
+$('settings-apply').onclick = async () => {
+  localStorage.setItem('orin_font', $('set-font').value);
+  localStorage.setItem('orin_blink', $('set-blink').checked ? '1' : '0');
+  termApi?.t.options && (termApi.t.options.fontSize = Number($('set-font').value), termApi.t.options.cursorBlink = $('set-blink').checked);
+  termApi?.fit.fit();
+  const c = Number($('set-cols').value), r = Number($('set-rows').value);
+  if (c >= 40 && r >= 10) await termApi?.post({ cols: c, rows: r }).catch(() => {});
+  settingsModal().close();
+  toast('Settings applied ✓');
+};
+
+/* ---------- guest ---------- */
+async function openGuest(token) {
   show('view-guest');
   const r = await fetch('/api/s/' + token); const j = await r.json();
   if (!r.ok) { $('g-meta').textContent = j.error || 'expired'; return; }
   $('g-meta').textContent = `shared session · ${j.mode}`;
-  $('g-note').textContent = j.mode === 'read' ? '👁 Read-only view — you can watch, not type.' : '⌨ Live terminal — your keystrokes run in the shared sandbox.';
+  $('g-note').textContent = j.mode === 'read' ? '👁 Read-only — you can watch, not type.' : '⌨ Live terminal — your keystrokes run in the shared sandbox.';
   const exp = new Date(j.expiresAt).getTime();
-  const tick = () => { const ms = exp - Date.now(); $('g-ttl').textContent = ms<=0?'expired':`⏳ ${Math.floor(ms/3600000)}h ${Math.floor(ms%3600000/60000)}m left`; };
+  const tick = () => paintTtl($('g-ttl'), exp - Date.now());
   tick(); setInterval(tick, 30000);
-  const termApi = makeTerm($('term-g')); $('term-g').innerHTML=''; termApi.t.open($('term-g')); termApi.fit.fit();
-  for (const e of (j.history||[])) {
-    if (e.type==='command') termApi.t.writeln('$ ' + (e.data.text||''));
-    else if (e.type==='stdout') termApi.t.write(String(e.data.text||'').replace(/\n/g,'\r\n'));
-    else if (e.type==='exit') termApi.t.writeln(`[exit ${e.data.code}]`);
+  termApi = makeTerm();
+  $('term-g').innerHTML = ''; termApi.t.open($('term-g')); termApi.fit.fit();
+  for (const e of (j.history || [])) {
+    if (e.type === 'command') termApi.t.writeln('$ ' + (e.data.text || ''));
+    else if (e.type === 'stdout') termApi.t.write(String(e.data.text || '').replace(/\n/g, '\r\n'));
+    else if (e.type === 'exit') termApi.t.writeln(`[exit ${e.data.code}]`);
   }
-  await streamLoop({ inputUrl:`/api/s/${token}/input`, streamUrl:`/api/s/${token}/stream`, termApi, onMeta:()=>{} });
+  await streamLoop({ inputUrl: `/api/s/${token}/input`, streamUrl: `/api/s/${token}/stream`, onMeta: () => {} });
 }
-// ---------- router ----------
-function route(){
+
+/* ---------- router ---------- */
+function route() {
   const h = location.hash;
   if (h.startsWith('#/t/')) openSession(h.slice(4));
   else if (h.startsWith('#/s/')) openGuest(h.slice(4));
-  else { show('view-home'); if(localStorage.getItem('orin_token')) refresh(); }
+  else { show('view-home'); if (localStorage.getItem('orin_token')) refresh(); }
 }
-window.addEventListener('hashchange', route);
+addEventListener('hashchange', route);
+addEventListener('resize', () => { try { termApi?.fit.fit(); } catch {} });
 route();
 </script>
 </body>

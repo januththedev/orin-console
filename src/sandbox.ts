@@ -85,9 +85,9 @@ export async function spawnShell(sb: Sandbox, cols: number, rows: number): Promi
 export async function sendInput(sb: Sandbox, text: string): Promise<void> {
   await exec(sb, 'tmux', 'send-keys', '-t', TMUX, '-l', '--', text);
 }
-
-/** Named keys: Enter, C-c, C-d, C-z, Tab, Up, Down, Left, Right, Escape, BS. */
-const KEYS = new Set(['Enter', 'C-c', 'C-d', 'C-z', 'Tab', 'Up', 'Down', 'Left', 'Right', 'Escape', 'BSpace', 'DC']);
+/** Named keys: Enter, C-c, C-d, C-l (clear), C-z, Tab, arrows, Escape, BS, DC. */
+const KEYS = new Set(['Enter', 'C-c', 'C-d', 'C-l', 'C-z', 'Tab', 'Up', 'Down', 'Left', 'Right', 'Escape',
+  'BSpace', 'DC']);
 export async function sendKey(sb: Sandbox, key: string): Promise<void> {
   if (!KEYS.has(key)) throw new Error('unsupported key');
   await exec(sb, 'tmux', 'send-keys', '-t', TMUX, key);

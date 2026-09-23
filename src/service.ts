@@ -188,7 +188,7 @@ export async function pushText(live: Live, text: string): Promise<void> {
 export async function pushKey(live: Live, key: string): Promise<void> {
   if (key === 'Enter') {
     await sendKey(live.sb, 'Enter');
-  } else if (key === 'C-c' || key === 'C-d' || key === 'C-z') {
+  } else if (key === 'C-c' || key === 'C-d' || key === 'C-z' || key === 'C-l') {
     await sendKey(live.sb, key);
     await appendEvent(live.session.id, 'signal', { key });
   } else if (['Tab', 'Up', 'Down', 'Left', 'Right', 'Escape', 'BSpace', 'DC'].includes(key)) {

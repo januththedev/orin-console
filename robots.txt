@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://console.orinai.org/sitemap.xml
