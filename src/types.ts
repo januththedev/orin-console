@@ -8,6 +8,8 @@ export interface ConsoleSession {
   cwd: string;
   cols: number;
   rows: number;
+  ports: number[];
+  portUrls: string[];
   envNames: string[];
   lastExit: number | null;
   createdAt: string;

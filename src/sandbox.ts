@@ -24,7 +24,7 @@ const TITLE_RE = /^EC:(\d+)$/;
 async function exec(sb: Sandbox, ...args: string[]): Promise<string> {
   try {
     const r = await sb.runCommand(args[0], args.slice(1), { timeoutMs: 15000 });
-    return (await r.stdout()).trim();
+    return (await r.stdout());
   } catch (e) {
     throw upstream(`tmux ${args[0]} failed: ${e instanceof Error ? e.message.slice(0, 160) : 'unknown'}`);
   }
@@ -94,7 +94,7 @@ export async function sendKey(sb: Sandbox, key: string): Promise<void> {
 }
 
 export async function captureScreen(sb: Sandbox): Promise<string> {
-  return exec(sb, 'tmux', 'capture-pane', '-p', '-t', TMUX, '-S', `-${CAPTURE_LINES}`);
+  return exec(sb, 'tmux', 'capture-pane', '-e', '-p', '-t', TMUX, '-S', `-${CAPTURE_LINES}`);
 }
 
 /** Last command exit status via the pane title hook. Null when unavailable (non-bash). */
@@ -110,7 +110,7 @@ export async function lastExit(sb: Sandbox): Promise<number | null> {
 
 export async function currentDir(sb: Sandbox): Promise<string> {
   try {
-    const d = await exec(sb, 'tmux', 'display-message', '-p', '-t', TMUX, '#{pane_current_path}');
+    const d = (await exec(sb, 'tmux', 'display-message', '-p', '-t', TMUX, '#{pane_current_path}')).trim();
     return d.replace(/^\/home\/[^/]+/, '~');
   } catch {
     return '~';

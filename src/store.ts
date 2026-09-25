@@ -9,6 +9,8 @@ function row(r: Record<string, unknown>): ConsoleSession {
     cwd: r.cwd as string,
     cols: r.cols as number,
     rows: r.rows as number,
+    ports: (r.ports as number[]) ?? [],
+    portUrls: (r.port_urls as string[]) ?? [],
     envNames: (r.env_names as string[]) ?? [],
     lastExit: (r.last_exit as number | null) ?? null,
     createdAt: (r.created_at as Date).toISOString(),
@@ -24,11 +26,12 @@ export async function insertSession(s: {
   cwd: string;
   cols: number;
   rows: number;
+  ports: number[];
   expiresAt: Date;
 }): Promise<ConsoleSession> {
   const rows = await sql`
-    INSERT INTO console_sessions (id, owner_uid, sandbox_id, cwd, cols, rows, expires_at)
-    VALUES (${s.id}, ${s.ownerUid}, ${s.sandboxId}, ${s.cwd}, ${s.cols}, ${s.rows}, ${s.expiresAt.toISOString()})
+    INSERT INTO console_sessions (id, owner_uid, sandbox_id, cwd, cols, rows, ports, expires_at)
+    VALUES (${s.id}, ${s.ownerUid}, ${s.sandboxId}, ${s.cwd}, ${s.cols}, ${s.rows}, ${s.ports}, ${s.expiresAt.toISOString()})
     RETURNING *`;
   return row(rows[0] as Record<string, unknown>);
 }
@@ -45,13 +48,14 @@ export async function listSessions(ownerUid: string): Promise<ConsoleSession[]> 
 
 export async function touchSession(
   id: string,
-  patch?: { cwd?: string; cols?: number; rows?: number; lastExit?: number | null },
+  patch?: { cwd?: string; cols?: number; rows?: number; ports?: number[]; lastExit?: number | null },
 ): Promise<void> {
-  if (patch?.cwd !== undefined || patch?.cols !== undefined || patch?.rows !== undefined || patch?.lastExit !== undefined) {
+  if (patch?.cwd !== undefined || patch?.cols !== undefined || patch?.rows !== undefined || patch?.ports !== undefined || patch?.lastExit !== undefined) {
     await sql`UPDATE console_sessions SET last_active_at = now(),
       cwd = COALESCE(${patch.cwd ?? null}, cwd),
       cols = COALESCE(${patch.cols ?? null}, cols),
       rows = COALESCE(${patch.rows ?? null}, rows),
+      ports = COALESCE(${patch.ports ?? null}, ports),
       last_exit = COALESCE(${patch.lastExit ?? null}, last_exit)
       WHERE id = ${id}`;
   } else {
@@ -70,6 +74,11 @@ export async function setSandboxName(id: string, sandboxName: string): Promise<v
 
 export async function deleteSession(id: string): Promise<void> {
   await sql`DELETE FROM console_sessions WHERE id = ${id}`;
+}
+
+export async function deleteExpiredSessions(): Promise<number> {
+  const rows = await sql`DELETE FROM console_sessions WHERE expires_at <= now() RETURNING id`;
+  return rows.length;
 }
 
 export async function setEnvPayload(sessionId: string, payload: string): Promise<void> {
