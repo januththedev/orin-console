@@ -246,7 +246,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 const { $, toast, copyText, modal, tabs, busy } = window.OrinUI;
 const api = async (path, opts = {}) => {
-  const t = localStorage.getItem('orin_token') || '';
+  const t = sessionStorage.getItem('orin_token') || '';
   const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t, ...(opts.headers || {}) } });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || 'request failed');
@@ -350,16 +350,16 @@ function askConfirm(title, desc, yesLabel, fn) {
 /* ---------- auth ---------- */
 const CORE = 'https://orinai.org';
 async function coreLogin(action, body) {
-  const r = await fetch(CORE + '/api/auth/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, ...body }) });
+  const r = await fetch(CORE + '/api/auth/password', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Orin-Legacy-Token': '1' }, body: JSON.stringify({ action, ...body }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(j.error || 'sign-in failed');
-  localStorage.setItem('orin_token', j.sessionToken);
-  localStorage.setItem('orin_user', JSON.stringify(j.user || {}));
+  sessionStorage.setItem('orin_token', j.sessionToken);
+  sessionStorage.setItem('orin_user', JSON.stringify(j.user || {}));
   paintWho();
   return j.user;
 }
-function signedInUser() { try { return JSON.parse(localStorage.getItem('orin_user') || 'null'); } catch { return null; } }
-function signOut() { localStorage.removeItem('orin_token'); localStorage.removeItem('orin_user'); paintWho(); }
+function signedInUser() { try { return JSON.parse(sessionStorage.getItem('orin_user') || 'null'); } catch { return null; } }
+function signOut() { sessionStorage.removeItem('orin_token'); sessionStorage.removeItem('orin_user'); paintWho(); }
 function paintWho() {
   const u = signedInUser();
   const label = u ? `${u.email || u.name || 'you'}` : '';
@@ -383,13 +383,13 @@ $('btn-register').onclick = () => busy($('btn-register'), async () => {
   } catch (e) { $('rg-msg').textContent = e.message; }
 });
 $('btn-logout').onclick = () => { signOut(); $('sessions-sec').classList.add('o-hidden'); toast('Signed out'); };
-$('btn-save').onclick = () => { localStorage.setItem('orin_token', $('token').value.trim()); localStorage.removeItem('orin_user'); paintWho(); refresh(); };
+$('btn-save').onclick = () => { sessionStorage.setItem('orin_token', $('token').value.trim()); sessionStorage.removeItem('orin_user'); paintWho(); refresh(); };
 $('btn-clear').onclick = () => { signOut(); $('token').value = ''; $('sessions-sec').classList.add('o-hidden'); };
 paintWho();
 
 /* ---------- landing actions ---------- */
 $('btn-launch').onclick = () => {
-  if (localStorage.getItem('orin_token')) {
+  if (sessionStorage.getItem('orin_token')) {
     $('new-sec').classList.remove('o-hidden');
     $('new-sec').scrollIntoView({ behavior: 'smooth', block: 'center' });
     refresh();
@@ -409,7 +409,7 @@ $('btn-create').onclick = () => busy($('btn-create'), async () => {
   } catch (e) { $('create-msg').textContent = e.message; }
 });
 async function refresh() {
-  if (!localStorage.getItem('orin_token')) { $('sessions-sec').classList.add('o-hidden'); return; }
+  if (!sessionStorage.getItem('orin_token')) { $('sessions-sec').classList.add('o-hidden'); return; }
   try {
     const { sessions } = await api('/api/sessions');
     $('sessions-sec').classList.remove('o-hidden');
@@ -455,7 +455,7 @@ function makeTerm() {
 async function streamLoop({ inputUrl, streamUrl, onMeta }) {
   const { t, fit } = termApi;
   let lastScreen = '', since = 0, alive = true;
-  const authz = () => ({ 'Content-Type': 'application/json', ...(localStorage.getItem('orin_token') ? { Authorization: 'Bearer ' + localStorage.getItem('orin_token') } : {}) });
+  const authz = () => ({ 'Content-Type': 'application/json', ...(sessionStorage.getItem('orin_token') ? { Authorization: 'Bearer ' + sessionStorage.getItem('orin_token') } : {}) });
   const post = (body) => fetch(inputUrl, { method: 'POST', headers: authz(), body: JSON.stringify(body) });
   termApi.post = post;
   t.onData((d) => {
@@ -630,7 +630,7 @@ function route() {
   const h = location.hash;
   if (h.startsWith('#/t/')) openSession(h.slice(4));
   else if (h.startsWith('#/s/')) openGuest(h.slice(4));
-  else { show('view-home'); if (localStorage.getItem('orin_token')) refresh(); }
+  else { show('view-home'); if (sessionStorage.getItem('orin_token')) refresh(); }
 }
 addEventListener('hashchange', route);
 addEventListener('resize', () => { try { termApi?.fit.fit(); } catch {} });

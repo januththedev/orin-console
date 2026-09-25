@@ -14,7 +14,7 @@ import {
   setSandboxName,
   touchSession,
 } from './store.js';
-import { attachSandbox, captureScreen, createSandbox, currentDir, destroySandbox, lastExit, sendInput, sendKey, shellAlive, spawnShell, resize } from './sandbox.js';
+import { attachSandbox, captureScreen, createSandbox, currentDir, destroySandbox, lastExit, portDomain, sendInput, sendKey, shellAlive, spawnShell, resize } from './sandbox.js';
 import { decryptEnv, encryptEnv, maskSecrets, randomToken, sha256 } from './secrets.js';
 import { SESSION_TTL_MS, type ConsoleSession, type Owner, type ShareMode } from './types.js';
 
@@ -80,6 +80,7 @@ export async function createSession(owner: Owner, opts: CreateOpts): Promise<Con
     cwd: '~',
     cols,
     rows,
+    ports,
     expiresAt: new Date(now + SESSION_TTL_MS),
   });
   if (Object.keys(env).length) {
@@ -88,7 +89,12 @@ export async function createSession(owner: Owner, opts: CreateOpts): Promise<Con
     await setEnvNames(id, Object.keys(env));
   }
   await appendEvent(id, 'system', { msg: 'session created', cols, rows, ports });
+  session.portUrls = publicUrls(sb, session.ports);
   return session;
+}
+
+function publicUrls(sb: Sandbox, ports: number[]): string[] {
+  return ports.map((port) => { try { return portDomain(sb, port); } catch { return ''; } }).filter(Boolean);
 }
 
 export interface Live {
@@ -116,6 +122,7 @@ export async function getLive(id: string, ownerUid?: string): Promise<Live> {
     await spawnShell(sb, session.cols, session.rows);
     await appendEvent(id, 'system', { msg: 'shell respawned after sandbox reboot' });
   }
+  session.portUrls = publicUrls(sb, session.ports);
   return { session, sb };
 }
 
@@ -123,7 +130,7 @@ export async function getLive(id: string, ownerUid?: string): Promise<Live> {
 async function renewSandbox(session: ConsoleSession): Promise<Sandbox> {
   const name = sandboxName(session.id);
   const env = await currentEnv(session.id);
-  const sb = await createSandbox(name, env, []);
+  const sb = await createSandbox(name, env, session.ports);
   try {
     await spawnShell(sb, session.cols, session.rows);
   } catch (e) {
@@ -140,7 +147,7 @@ async function currentEnv(sessionId: string): Promise<Record<string, string>> {
     const blob = await getEnvPayload(sessionId);
     return blob ? decryptEnv(blob) : {};
   } catch {
-    return {};
+    throw new Error('stored console environment could not be decrypted');
   }
 }
 
@@ -173,30 +180,36 @@ async function secretValues(sessionId: string): Promise<string[]> {
     if (!blob) return [];
     return Object.values(decryptEnv(blob));
   } catch {
-    return [];
+    throw new Error('stored console secrets could not be decrypted');
   }
 }
 
-export async function pushText(live: Live, text: string): Promise<void> {
-  if (typeof text !== 'string' || !text || text.length > 4096) throw badRequest('text 1..4096 chars');
-  await sendInput(live.sb, text);
-  const secrets = await secretValues(live.session.id);
-  await appendEvent(live.session.id, 'command', { text: maskSecrets(text, secrets) });
-  await touchSession(live.session.id);
+const queues = new Map<string, Promise<unknown>>();
+function serial<T>(id: string, task: () => Promise<T>): Promise<T> {
+  const previous = queues.get(id) ?? Promise.resolve();
+  const next = previous.catch(() => undefined).then(task);
+  queues.set(id, next);
+  return next.finally(() => { if (queues.get(id) === next) queues.delete(id); });
 }
 
-export async function pushKey(live: Live, key: string): Promise<void> {
-  if (key === 'Enter') {
-    await sendKey(live.sb, 'Enter');
-  } else if (key === 'C-c' || key === 'C-d' || key === 'C-z' || key === 'C-l') {
-    await sendKey(live.sb, key);
-    await appendEvent(live.session.id, 'signal', { key });
-  } else if (['Tab', 'Up', 'Down', 'Left', 'Right', 'Escape', 'BSpace', 'DC'].includes(key)) {
-    await sendKey(live.sb, key);
-  } else {
-    throw badRequest('unsupported key');
-  }
-  await touchSession(live.session.id);
+export function pushText(live: Live, text: string): Promise<void> {
+  if (typeof text !== 'string' || !text || text.length > 4096) return Promise.reject(badRequest('text 1..4096 chars'));
+  return serial(live.session.id, async () => {
+    await sendInput(live.sb, text);
+    const secrets = await secretValues(live.session.id);
+    await appendEvent(live.session.id, 'command', { text: maskSecrets(text, secrets) });
+    await touchSession(live.session.id);
+  });
+}
+
+export function pushKey(live: Live, key: string): Promise<void> {
+  return serial(live.session.id, async () => {
+    if (key === 'Enter') await sendKey(live.sb, 'Enter');
+    else if (['C-c', 'C-d', 'C-z', 'C-l'].includes(key)) { await sendKey(live.sb, key); await appendEvent(live.session.id, 'signal', { key }); }
+    else if (['Tab', 'Up', 'Down', 'Left', 'Right', 'Escape', 'BSpace', 'DC'].includes(key)) await sendKey(live.sb, key);
+    else throw badRequest('unsupported key');
+    await touchSession(live.session.id);
+  });
 }
 
 export interface PollResult {
@@ -236,17 +249,20 @@ export async function pollScreen(live: Live, lastScreen: string): Promise<PollRe
   return { screen: text, cwd, changed };
 }
 
-export async function doResize(live: Live, cols: number, rows: number): Promise<void> {
-  const c = clamp(cols, 40, 250, live.session.cols);
-  const r = clamp(rows, 10, 80, live.session.rows);
-  await resize(live.sb, c, r);
-  await touchSession(live.session.id, { cols: c, rows: r });
-  await appendEvent(live.session.id, 'resize', { cols: c, rows: r });
+export function doResize(live: Live, cols: number, rows: number): Promise<void> {
+  return serial(live.session.id, async () => {
+    const c = clamp(cols, 40, 250, live.session.cols);
+    const r = clamp(rows, 10, 80, live.session.rows);
+    await resize(live.sb, c, r);
+    await touchSession(live.session.id, { cols: c, rows: r });
+    await appendEvent(live.session.id, 'resize', { cols: c, rows: r });
+  });
 }
 
 export async function createShare(owner: Owner, sessionId: string, mode: string): Promise<{ token: string; mode: ShareMode }> {
   if (mode !== 'read' && mode !== 'terminal') throw badRequest('mode must be read|terminal');
   const live = await getLive(sessionId, owner.uid);
+  if (mode === 'terminal' && live.session.envNames.length) throw badRequest('Terminal sharing is disabled for sessions with injected environment values.');
   const token = randomToken('cst_', 32);
   await insertShare(sha256(token), live.session.id, mode);
   await appendEvent(live.session.id, 'system', { msg: 'share created', mode });
