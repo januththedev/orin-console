@@ -29,7 +29,11 @@ Only session credentials can own a terminal. MCP credentials cannot be used to c
 
 ## Sessions and sharing
 
-- Session record: 24 hours, enforced on every request.
+- No account is required. Open the page and you get a terminal; the session URL is the only credential, and it dies with the session.
+- Session record: 8 hours, enforced on every request.
+- Keyless creation is bounded twice: a per-client window (`ORIN_CONSOLE_ANON_PER_HOUR`, per instance) and a global live-session cap (`ORIN_CONSOLE_MAX_ACTIVE_SESSIONS`) counted in the database, which is the limit that actually holds across instances.
+- Keyless visitors get a terminal but not environment variables, and cannot list sessions. Listing requires an account.
+- An absent `Authorization` header means keyless; a present but malformed one is rejected rather than silently downgraded to anonymous.
 - Sandbox compute slice: platform-limited lifetime, renewed transparently on access; filesystem is fresh after renewal, while metadata/history/shares survive.
 - Environment values are encrypted at rest and masked in stored output. Terminal sharing is rejected for sessions with injected environment values because a shell viewer cannot safely guarantee secret non-disclosure.
 - Share tokens are 256-bit random values stored as hashes and shown once.

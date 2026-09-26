@@ -5,7 +5,7 @@ import { CAPTURE_LINES } from './types.js';
 /**
  * Hobby plans cap sandbox `timeout` at 45 minutes (platform-enforced).
  * Compute slices therefore live <= 40m; the SESSION record (history, shares)
- * still lives 24h and a fresh sandbox is transparently provisioned on access.
+ * still lives 8h and a fresh sandbox is transparently provisioned on access.
  */
 export const SANDBOX_TTL_MS = 40 * 60 * 1000;
 
