@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Orin Console Sessions — 24-Hour Lifecycle &amp; History</title>
-<meta name="description" content="How Orin Console sessions work: 24-hour TTL, transparent compute renewal, replayable history, and terminating sessions." />
+<title>Orin Console Sessions — 8-Hour Lifecycle &amp; History</title>
+<meta name="description" content="How Orin Console sessions work: 8-hour TTL, no account required, transparent compute renewal, replayable history, and terminating sessions." />
 <link rel="canonical" href="https://console.orinai.org/docs/sessions" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://console.orinai.org/docs/sessions" />
-<meta property="og:title" content="Orin Console Sessions — 24-Hour Lifecycle" />
-<meta property="og:description" content="24-hour session TTL, transparent compute renewal, replayable history." />
+<meta property="og:title" content="Orin Console Sessions — 8-Hour Lifecycle" />
+<meta property="og:description" content="8-hour session TTL, no account required, transparent compute renewal, replayable history." />
 <meta property="og:image" content="https://console.orinai.org/og-console.png" />
 <meta property="og:site_name" content="Orin Console" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Orin Console Sessions" />
-<meta name="twitter:description" content="24-hour session TTL, transparent compute renewal, replayable history." />
+<meta name="twitter:description" content="8-hour session TTL, no account required, transparent compute renewal, replayable history." />
 <meta name="twitter:image" content="https://console.orinai.org/og-console.png" />
 <meta name="theme-color" content="#04060c" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2304060c'/%3E%3Ctext x='8' y='23' font-family='monospace' font-size='17' fill='%235eead4'%3E%3E_%3C/text%3E%3C/svg%3E" />
@@ -36,9 +36,11 @@
 <nav aria-label="Breadcrumb" style="font-size:13px;color:var(--orin-dim)"><a href="https://console.orinai.org/" style="color:var(--orin-acc)">Orin Console</a> / Docs / Sessions</nav>
 <article>
 <h1>Sessions</h1>
-<p>A session is your unit of work: one isolated sandbox, one terminal, one 24-hour clock. The header pill always shows the remaining time — amber under an hour, red under fifteen minutes.</p>
-<h2>24-hour lifecycle</h2>
-<p>Every session <b>expires 24 hours after creation</b>. Expiry is enforced on every request: the sandbox is stopped and all session data — history, shares, env vars — is deleted. Expired sessions return <b>410 Gone</b>, never stale output.</p>
+<p>A session is your unit of work: one isolated sandbox, one terminal, one 8-hour clock. The header pill always shows the remaining time — amber under an hour, red under fifteen minutes.</p>
+<h2>8-hour lifecycle</h2>
+<p>Every session <b>expires 8 hours after creation</b>. Expiry is enforced on every request: the sandbox is stopped and all session data — history, shares, env vars — is deleted. Expired sessions return <b>410 Gone</b>, never stale output.</p>
+<h2>No account needed</h2>
+<p>Open the page and you get a terminal. There is no sign-up step: the session URL is the only credential, it is unguessable, and it dies with the session. Keyless sessions cannot set environment variables and cannot list other sessions. To keep the cost bounded, each client may start a limited number of sessions per hour, and there is a global cap on live sessions.</p>
 <h2>Compute renewal</h2>
 <p>Cloud sandboxes on this plan live at most ~40 minutes each. When a sandbox ends while your session is still alive, Console <b>transparently provisions a fresh one</b> on your next action and logs a <i>sandbox renewed</i> event. Your <b>history and share links survive</b>; the sandbox filesystem starts fresh, and exposed ports get new URLs.</p>
 <h2>History</h2>

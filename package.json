@@ -1,7 +1,7 @@
 {
   "name": "orin-console",
   "version": "1.1.0",
-  "description": "Orin Console: browser terminal for isolated Vercel Sandboxes with authenticated sharing and 24-hour session metadata.",
+  "description": "Orin Console: keyless browser terminal on isolated Vercel Sandboxes, 8-hour sessions, expiring share links.",
   "type": "module",
   "engines": { "node": ">=22.18.0" },
   "scripts": {

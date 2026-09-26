@@ -4,17 +4,17 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Orin Console Security — Isolation, Secrets &amp; Data Lifecycle</title>
-<meta name="description" content="How Orin Console protects you: one isolated sandbox per session, encrypted secrets with masked output, enforced 24-hour data deletion." />
+<meta name="description" content="How Orin Console protects you: one isolated sandbox per session, unguessable session links, encrypted secrets with masked output, enforced 8-hour data deletion." />
 <link rel="canonical" href="https://console.orinai.org/docs/security" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://console.orinai.org/docs/security" />
 <meta property="og:title" content="Orin Console Security" />
-<meta property="og:description" content="Sandbox isolation, encrypted secrets with masked output, enforced 24-hour deletion." />
+<meta property="og:description" content="Sandbox isolation, encrypted secrets with masked output, enforced 8-hour deletion." />
 <meta property="og:image" content="https://console.orinai.org/og-console.png" />
 <meta property="og:site_name" content="Orin Console" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Orin Console Security" />
-<meta name="twitter:description" content="Sandbox isolation, encrypted secrets, enforced 24-hour deletion." />
+<meta name="twitter:description" content="Sandbox isolation, encrypted secrets, enforced 8-hour deletion." />
 <meta name="twitter:image" content="https://console.orinai.org/og-console.png" />
 <meta name="theme-color" content="#04060c" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2304060c'/%3E%3Ctext x='8' y='23' font-family='monospace' font-size='17' fill='%235eead4'%3E%3E_%3C/text%3E%3C/svg%3E" />
@@ -46,9 +46,11 @@
 <li>Secrets are <b>never logged and never returned by any API</b>.</li>
 </ul>
 <h2>Authentication</h2>
-<p>Session management requires your <b>Orin account session</b> (revocation-checked) or a scoped <b>MCP credential</b>. Share links use separate random tokens with no account access.</p>
+<p>You do not need an account. A session URL is the only credential: it is a 96-bit random identifier, it is never guessable, and it stops working the moment the session expires. Signed-in users get an Orin account session (revocation-checked) or a scoped <b>MCP credential</b> instead, which additionally lets them list their own sessions.</p>
+<h2>Keyless access controls</h2>
+<p>Because anyone may start a session, two limits bound the cost. A per-client window limits how many sessions one IP may start per hour, and a global cap on live sessions is counted in the database so it holds across every serverless instance rather than resetting per instance. Keyless sessions may not set environment variables and may not list sessions. An <code>Authorization</code> header that is present but malformed is rejected, never silently treated as keyless.</p>
 <h2>Data lifecycle</h2>
-<p>All session data — history, shares, env vars — is <b>deleted at 24-hour expiry or on manual terminate</b>. There is no archive, no backup, no recovery.</p>
+<p>All session data — history, shares, env vars — is <b>deleted at 8-hour expiry or on manual terminate</b>. There is no archive, no backup, no recovery.</p>
 </article>
 <div class="docnav"><a href="/docs/sharing" style="color:var(--orin-acc)">← Sharing</a><a href="https://console.orinai.org/" style="color:var(--orin-acc)">Orin Console →</a></div>
 </main>

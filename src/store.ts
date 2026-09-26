@@ -81,6 +81,16 @@ export async function deleteExpiredSessions(): Promise<number> {
   return rows.length;
 }
 
+/**
+ * Live sessions across every client. This is the global ceiling that keeps
+ * keyless session creation from turning into unbounded sandbox spend, and it
+ * is counted in the database so it holds across serverless instances.
+ */
+export async function countActiveSessions(): Promise<number> {
+  const rows = await sql`SELECT count(*)::int AS n FROM console_sessions WHERE expires_at > now()`;
+  return Number((rows[0] as Record<string, unknown>).n ?? 0);
+}
+
 export async function setEnvPayload(sessionId: string, payload: string): Promise<void> {
   await sql`INSERT INTO console_env (session_id, payload) VALUES (${sessionId}, ${payload})
     ON CONFLICT (session_id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = now()`;
